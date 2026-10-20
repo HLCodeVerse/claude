@@ -62,8 +62,10 @@ export DATABASE_SAVE_DATA_NEW_MESSAGE=true
 export DATABASE_SAVE_MESSAGE_UPDATE=true
 export DATABASE_SAVE_DATA_CONTACTS=true
 export DATABASE_SAVE_DATA_CHATS=true
-export DATABASE_SAVE_DATA_HISTORIC=false
-export DATABASE_SAVE_DATA_LABELS=false
+export DATABASE_SAVE_DATA_HISTORIC=true
+export DATABASE_SAVE_DATA_LABELS=true
+export SYNC_FULL_HISTORY=true
+export CONFIG_SESSION_PHONE_SYNC_FULL_HISTORY=true
 
 # Ensure 'evolution' schema exists in PostgreSQL before running Prisma migrations
 echo "[-] Ensuring 'evolution' database schema exists..."

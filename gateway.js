@@ -336,7 +336,8 @@ function ensureInstanceOnline(instanceName, callback) {
           instanceName: instanceName,
           token: apiKey,
           qrcode: true,
-          integration: 'WHATSAPP-BAILEYS'
+          integration: 'WHATSAPP-BAILEYS',
+          syncFullHistory: true
         });
         const createReq = http.request({
           hostname: INTERNAL_HOST,
