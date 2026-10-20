@@ -167,6 +167,31 @@ const sendWhatsAppMessage = async (instance, recipientNumber, text) => {
 sendWhatsAppMessage('my_bot', '15551234567', 'Hello from my Node.js application! 🚀')
   .then(res => console.log('Message sent:', res))
   .catch(err => console.error('Error:', err.message));
+
+// Send Image / PDF / Voice Note (via Local File or URL):
+const fs = require('fs');
+
+async function sendLocalFile(instance, recipientNumber, filePath, type = 'image', caption = '') {
+  const fileBuffer = fs.readFileSync(filePath);
+  const base64Data = fileBuffer.toString('base64');
+  const mimeType = type === 'image' ? 'image/png' : (type === 'audio' ? 'audio/mp3' : 'application/pdf');
+  const dataUri = `data:${mimeType};base64,${base64Data}`;
+
+  const endpoint = type === 'audio' 
+    ? `https://claude-kv0j.onrender.com/message/sendWhatsAppAudio/${instance}`
+    : `https://claude-kv0j.onrender.com/message/sendMedia/${instance}`;
+
+  const payload = type === 'audio'
+    ? { number: recipientNumber, audio: dataUri, ptt: true }
+    : { number: recipientNumber, mediatype: type, mimetype: mimeType, media: dataUri, caption: caption, fileName: 'document.pdf' };
+
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'apikey': 'evol_whatsapp_api_secret_key_2026', 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  return await res.json();
+}
 ```
 
 ---
@@ -174,24 +199,55 @@ sendWhatsAppMessage('my_bot', '15551234567', 'Hello from my Node.js application!
 ### Python / FastAPI / Django / Flask
 ```python
 import requests
+import base64
 
-def send_whatsapp(instance_name: str, number: str, message: str):
+def send_whatsapp_text(instance_name: str, number: str, message: str):
     url = f"https://claude-kv0j.onrender.com/message/sendText/{instance_name}"
     headers = {
         "apikey": "evol_whatsapp_api_secret_key_2026",
         "Content-Type": "application/json"
     }
-    payload = {
-        "number": number,
-        "text": message
-    }
+    payload = {"number": number, "text": message}
     response = requests.post(url, json=payload, headers=headers)
     response.raise_for_status()
     return response.json()
 
-# Example usage:
-result = send_whatsapp("my_bot", "15551234567", "Hello from Python backend! 🐍")
-print("Response:", result)
+def send_whatsapp_media(instance_name: str, number: str, file_path_or_url: str, media_type: str = "image", caption: str = ""):
+    """Send image, pdf document, or voice note via URL or local file path."""
+    headers = {
+        "apikey": "evol_whatsapp_api_secret_key_2026",
+        "Content-Type": "application/json"
+    }
+    
+    # Check if local file or URL
+    if file_path_or_url.startswith("http"):
+        media_data = file_path_or_url
+    else:
+        with open(file_path_or_url, "rb") as f:
+            encoded = base64.b64encode(f.read()).decode("utf-8")
+        mime = "image/png" if media_type == "image" else ("audio/mp3" if media_type == "audio" else "application/pdf")
+        media_data = f"data:{mime};base64,{encoded}"
+
+    if media_type == "audio":
+        url = f"https://claude-kv0j.onrender.com/message/sendWhatsAppAudio/{instance_name}"
+        payload = {"number": number, "audio": media_data, "ptt": True}
+    else:
+        url = f"https://claude-kv0j.onrender.com/message/sendMedia/{instance_name}"
+        payload = {
+            "number": number,
+            "mediatype": media_type,
+            "media": media_data,
+            "caption": caption,
+            "fileName": "document.pdf"
+        }
+
+    response = requests.post(url, json=payload, headers=headers)
+    response.raise_for_status()
+    return response.json()
+
+# Example:
+# send_whatsapp_text("my_bot", "15551234567", "Hello from Python! 🐍")
+# send_whatsapp_media("my_bot", "15551234567", "invoice.pdf", media_type="document")
 ```
 
 ---
