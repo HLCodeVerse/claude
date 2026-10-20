@@ -423,6 +423,29 @@ function initAutoRevivePoller() {
 
 initAutoRevivePoller();
 
+// Permanent Forever Keep-Alive: Keeps Baileys socket active & prevents sleeping
+function initForeverKeepAlive() {
+  const KEEP_ALIVE_INTERVAL = 3 * 60 * 1000; // Every 3 minutes
+  setInterval(() => {
+    // 1. Touch health endpoint
+    const pingReq = http.request({
+      hostname: INTERNAL_HOST,
+      port: INTERNAL_PORT,
+      path: '/',
+      method: 'GET'
+    }, (res) => {
+      res.resume();
+    });
+    pingReq.on('error', () => {});
+    pingReq.end();
+
+    // 2. Keep instance "hl" active and auto-reconnect if dropped
+    ensureInstanceOnline('hl', () => {});
+  }, KEEP_ALIVE_INTERVAL);
+}
+
+initForeverKeepAlive();
+
 // Transparent HTTP reverse proxy to Evolution API with auto-retry and offline auto-revive
 function proxyHttpRequest(req, res) {
   const clientIp = req.socket.remoteAddress || '';
@@ -469,23 +492,40 @@ function proxyHttpRequest(req, res) {
 
     const proxyReq = http.request(options, (proxyRes) => {
       // If message dispatch failed because instance is offline/not connected, auto-revive & retry once!
-      if (isMessageDispatch && retryCount === 0 && proxyRes.statusCode >= 400 && targetInstance) {
+      if (isMessageDispatch && proxyRes.statusCode >= 400 && targetInstance) {
         let respChunks = [];
         proxyRes.on('data', c => respChunks.push(c));
         proxyRes.on('end', () => {
           const respStr = Buffer.concat(respChunks).toString('utf8');
-          const isOffline = respStr.includes('does not exist') ||
-                            respStr.includes('closed') ||
-                            respStr.includes('not connected') ||
-                            respStr.includes('connection') ||
-                            respStr.includes('Timed Out') ||
+          const lowerStr = respStr.toLowerCase();
+          const isOffline = lowerStr.includes('closed') ||
+                            lowerStr.includes('connection closed') ||
+                            lowerStr.includes('does not exist') ||
+                            lowerStr.includes('not connected') ||
+                            lowerStr.includes('timed out') ||
                             proxyRes.statusCode === 404;
 
-          if (isOffline) {
+          if (isOffline && retryCount === 0) {
             console.log(`[Gateway Auto-Revive] Message dispatch returned ${proxyRes.statusCode} (${respStr.substring(0, 100)}). Reviving instance "${targetInstance}" and retrying...`);
             ensureInstanceOnline(targetInstance, () => {
               executeForward(bodyBuffer, 1);
             });
+            return;
+          }
+
+          // If still offline, return a clean, descriptive 503 instead of raw 500 crash
+          if (isOffline) {
+            const cleanError = JSON.stringify({
+              status: 503,
+              error: 'WhatsApp Session Offline',
+              message: `WhatsApp instance "${targetInstance}" is not currently connected. Please link your phone in WhatsApp Setup via 8-Digit Code or QR Code.`,
+              instance: targetInstance
+            });
+            res.writeHead(503, {
+              'Content-Type': 'application/json; charset=utf-8',
+              'Content-Length': Buffer.byteLength(cleanError)
+            });
+            res.end(cleanError);
             return;
           }
 
