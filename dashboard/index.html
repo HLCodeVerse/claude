@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WhatsApp Service Manager & Interactive Test Suite | Evolution API</title>
+  <title>Easy What's - WhatsApp Service Manager & Interactive Test Suite</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script>
@@ -70,12 +70,12 @@
         </div>
         <div>
           <h1 class="text-base sm:text-lg font-bold leading-tight flex items-center gap-2">
-            WhatsApp API Hub
+            Easy What's
             <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
-              Evolution v2
+              WhatsApp Gateway
             </span>
           </h1>
-          <p class="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">Render Cloud WhatsApp Automation & Interactive Diagnostic Suite</p>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">Easy What's Cloud WhatsApp Automation & Diagnostic Suite</p>
         </div>
       </div>
 
@@ -2204,6 +2204,14 @@
       let endpoint = '';
       let payload = {};
 
+      function toCleanBase64(val) {
+        if (typeof val === 'string' && val.startsWith('data:')) {
+          const commaIdx = val.indexOf(',');
+          return commaIdx !== -1 ? val.substring(commaIdx + 1) : val;
+        }
+        return val;
+      }
+
       if (activeMsgType === 'text') {
         const text = document.getElementById('sendTextMessage').value.trim();
         if (!text) { alert('Message text is required'); btn.disabled = false; return; }
@@ -2224,7 +2232,7 @@
           number: recipient,
           mediatype: isVideo ? 'video' : 'image',
           mimetype: uploadedMediaMime || (isVideo ? 'video/mp4' : 'image/jpeg'),
-          media: mediaData,
+          media: toCleanBase64(mediaData),
           caption: caption
         };
       } else if (activeMsgType === 'audio') {
@@ -2239,7 +2247,7 @@
         endpoint = `/message/sendWhatsAppAudio/${instance}`;
         payload = {
           number: recipient,
-          audio: audioData,
+          audio: toCleanBase64(audioData),
           ptt: ptt
         };
       } else if (activeMsgType === 'document') {
@@ -2256,7 +2264,7 @@
           number: recipient,
           mediatype: 'document',
           mimetype: uploadedDocMime || 'application/pdf',
-          media: docData,
+          media: toCleanBase64(docData),
           fileName: fileName
         };
       } else if (activeMsgType === 'location') {

@@ -224,8 +224,8 @@ function getInitializingHtml() {
       <span class="dot"></span>
       Gateway Active &bull; Booting Core
     </div>
-    <h1>Evolution API is Initializing</h1>
-    <p>Evolution API is initializing, please wait a few seconds... (auto-refreshing)</p>
+    <h1>Easy What's is Initializing</h1>
+    <p>Easy What's is initializing, please wait a few seconds... (auto-refreshing)</p>
     <div class="progress-bar-container">
       <div class="progress-bar-fill"></div>
     </div>
@@ -251,7 +251,7 @@ function sendBackendInitializingResponse(req, res) {
     const json = JSON.stringify({
       status: 503,
       error: 'Service Unavailable',
-      message: 'Evolution API is initializing, please wait a few seconds... (auto-refreshing)',
+      message: 'Easy What\'s is initializing, please wait a few seconds... (auto-refreshing)',
       uptime: process.uptime(),
       retryAfter: 3
     });
@@ -262,6 +262,40 @@ function sendBackendInitializingResponse(req, res) {
       'Cache-Control': 'no-cache, no-store, must-revalidate'
     });
     res.end(json);
+  }
+}
+
+// Cleans media payload: strips data URIs to pure Base64 and infers mimetype
+function cleanMediaPayload(rawBody) {
+  try {
+    const data = JSON.parse(rawBody);
+    let modified = false;
+    if (data && typeof data === 'object') {
+      if (typeof data.media === 'string' && data.media.startsWith('data:')) {
+        const match = data.media.match(/^data:([^;]+);base64,(.+)$/s);
+        if (match) {
+          if (!data.mimetype) data.mimetype = match[1];
+          data.media = match[2];
+          modified = true;
+        } else {
+          const commaIdx = data.media.indexOf(',');
+          if (commaIdx !== -1) {
+            data.media = data.media.substring(commaIdx + 1);
+            modified = true;
+          }
+        }
+      }
+      if (typeof data.audio === 'string' && data.audio.startsWith('data:')) {
+        const commaIdx = data.audio.indexOf(',');
+        if (commaIdx !== -1) {
+          data.audio = data.audio.substring(commaIdx + 1);
+          modified = true;
+        }
+      }
+    }
+    return modified ? JSON.stringify(data) : rawBody;
+  } catch {
+    return rawBody;
   }
 }
 
@@ -281,63 +315,94 @@ function proxyHttpRequest(req, res) {
     headers['x-forwarded-host'] = headers['host'];
   }
 
-  const options = {
-    hostname: INTERNAL_HOST,
-    port: INTERNAL_PORT,
-    path: req.url,
-    method: req.method,
-    headers: headers
-  };
+  const isMediaDispatch = req.method === 'POST' && (
+    req.url.includes('/message/sendMedia') ||
+    req.url.includes('/message/sendWhatsAppAudio')
+  );
 
-  const proxyReq = http.request(options, (proxyRes) => {
-    proxyRes.on('error', (err) => {
-      if (!res.destroyed) {
+  const forward = (bodyBuffer) => {
+    if (bodyBuffer) {
+      headers['content-length'] = Buffer.byteLength(bodyBuffer);
+    }
+
+    const options = {
+      hostname: INTERNAL_HOST,
+      port: INTERNAL_PORT,
+      path: req.url,
+      method: req.method,
+      headers: headers
+    };
+
+    const proxyReq = http.request(options, (proxyRes) => {
+      proxyRes.on('error', (err) => {
+        if (!res.destroyed) {
+          res.destroy(err);
+        }
+      });
+      res.writeHead(proxyRes.statusCode, proxyRes.statusMessage, proxyRes.headers);
+      proxyRes.pipe(res);
+    });
+
+    proxyReq.on('error', (err) => {
+      if (!res.headersSent) {
+        if (err.code === 'ECONNREFUSED' || err.code === 'ECONNRESET' || err.code === 'ENOTFOUND') {
+          sendBackendInitializingResponse(req, res);
+        } else {
+          console.error('[Gateway] Proxy error:', err.message);
+          const errJson = JSON.stringify({
+            status: 502,
+            error: 'Bad Gateway',
+            message: err.message
+          });
+          res.writeHead(502, {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Content-Length': Buffer.byteLength(errJson)
+          });
+          res.end(errJson);
+        }
+      } else {
         res.destroy(err);
       }
     });
-    res.writeHead(proxyRes.statusCode, proxyRes.statusMessage, proxyRes.headers);
-    proxyRes.pipe(res);
-  });
 
-  proxyReq.on('error', (err) => {
-    if (!res.headersSent) {
-      if (err.code === 'ECONNREFUSED' || err.code === 'ECONNRESET' || err.code === 'ENOTFOUND') {
-        sendBackendInitializingResponse(req, res);
-      } else {
-        console.error('[Gateway] Proxy error:', err.message);
-        const errJson = JSON.stringify({
-          status: 502,
-          error: 'Bad Gateway',
-          message: err.message
-        });
-        res.writeHead(502, {
-          'Content-Type': 'application/json; charset=utf-8',
-          'Content-Length': Buffer.byteLength(errJson)
-        });
-        res.end(errJson);
-      }
-    } else {
-      res.destroy(err);
-    }
-  });
-
-  req.on('aborted', () => {
-    proxyReq.destroy();
-  });
-  req.on('error', (err) => {
-    proxyReq.destroy(err);
-  });
-
-  res.on('close', () => {
-    if (proxyReq && !proxyReq.destroyed) {
+    req.on('aborted', () => {
       proxyReq.destroy();
-    }
-  });
+    });
+    req.on('error', (err) => {
+      proxyReq.destroy(err);
+    });
 
-  if (req.readable) {
-    req.pipe(proxyReq);
+    res.on('close', () => {
+      if (proxyReq && !proxyReq.destroyed) {
+        proxyReq.destroy();
+      }
+    });
+
+    if (bodyBuffer) {
+      proxyReq.end(bodyBuffer);
+    } else if (req.readable) {
+      req.pipe(proxyReq);
+    } else {
+      proxyReq.end();
+    }
+  };
+
+  if (isMediaDispatch && (headers['content-type'] || '').includes('application/json')) {
+    const chunks = [];
+    req.on('data', chunk => chunks.push(chunk));
+    req.on('end', () => {
+      const rawBody = Buffer.concat(chunks).toString('utf8');
+      const cleaned = cleanMediaPayload(rawBody);
+      forward(Buffer.from(cleaned, 'utf8'));
+    });
+    req.on('error', err => {
+      if (!res.headersSent) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
   } else {
-    proxyReq.end();
+    forward(null);
   }
 }
 
