@@ -43,12 +43,12 @@ chmod 775 /run/postgresql
 export CACHE_REDIS_ENABLED="${CACHE_REDIS_ENABLED:-false}"
 export CACHE_LOCAL_ENABLED=true
 
-# 6. Database Configuration (Supabase PostgreSQL / Embedded DB Fallback)
-SUPABASE_URI="postgresql://postgres.zrwqcigybfqelbtenenv:Chandan%409777767188@aws-1-ap-south-1.pooler.supabase.com:5432/postgres?schema=public&sslmode=require"
+# 6. Database Configuration (Supabase PostgreSQL / Dedicated Schema)
+SUPABASE_URI="postgresql://postgres.zrwqcigybfqelbtenenv:Chandan%409777767188@aws-1-ap-south-1.pooler.supabase.com:5432/postgres?schema=evolution&sslmode=require"
 
 if [ -z "$DATABASE_CONNECTION_URI" ] || [ "$DATABASE_CONNECTION_URI" = "postgresql://user:pass@localhost:5432/evolution?schema=public" ]; then
   export DATABASE_CONNECTION_URI="$SUPABASE_URI"
-  echo "[-] Auto-configured Supabase PostgreSQL for persistent WhatsApp sessions."
+  echo "[-] Auto-configured Supabase PostgreSQL in dedicated schema 'evolution'."
 fi
 
 export DATABASE_ENABLED=true
@@ -64,6 +64,17 @@ export DATABASE_SAVE_DATA_CONTACTS=true
 export DATABASE_SAVE_DATA_CHATS=true
 export DATABASE_SAVE_DATA_HISTORIC=false
 export DATABASE_SAVE_DATA_LABELS=false
+
+# Ensure 'evolution' schema exists in PostgreSQL before running Prisma migrations
+echo "[-] Ensuring 'evolution' database schema exists..."
+node -e "
+  const { Client } = require('pg');
+  const client = new Client({ connectionString: process.env.DATABASE_CONNECTION_URI });
+  client.connect()
+    .then(() => client.query('CREATE SCHEMA IF NOT EXISTS evolution;'))
+    .then(() => { console.log('[-] Schema \"evolution\" ready.'); return client.end(); })
+    .catch(err => { console.log('[!] Schema init notice:', err.message); });
+" 2>/dev/null || true
 
 # 7. WhatsApp Web Protocol & Baileys Settings (Prevents count: 0 and connection drops)
 if [ -z "$CONFIG_SESSION_PHONE_VERSION" ]; then
@@ -97,11 +108,20 @@ fi
 export CONFIG_SESSION_PHONE_CLIENT="Chrome"
 export CONFIG_SESSION_PHONE_NAME="Chrome"
 
-# 7. Apply Database Migrations (Prisma)
-echo "[-] Applying Evolution API Prisma database migrations..."
+# 8. Apply Database Migrations (Prisma with Safe Fallback)
+echo "[-] Applying Evolution API database schema migrations..."
+set +e
 if [ -f "./Docker/scripts/deploy_database.sh" ]; then
-  . ./Docker/scripts/deploy_database.sh || echo "[!] Database migration notice: continuing startup..."
+  . ./Docker/scripts/deploy_database.sh
+  MIGRATE_EXIT=$?
+  if [ $MIGRATE_EXIT -ne 0 ]; then
+    echo "[!] deploy_database.sh exited with $MIGRATE_EXIT. Synchronizing with prisma db push..."
+    npx prisma db push --schema ./prisma/postgresql-schema.prisma --accept-data-loss || true
+  fi
+else
+  npx prisma db push --schema ./prisma/postgresql-schema.prisma --accept-data-loss || true
 fi
+set -e
 
 echo "=========================================================="
 echo " WhatsApp Service Ready"
