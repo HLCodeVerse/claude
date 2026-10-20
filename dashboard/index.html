@@ -488,17 +488,70 @@
     <!-- TAB 2: INSTANCES -->
     <!-- ======================================================================= -->
     <div id="content-instances" class="hidden space-y-6">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 class="text-lg font-bold">Managed WhatsApp Instances</h2>
-          <p class="text-xs text-slate-500 dark:text-slate-400">Each instance represents one connected WhatsApp phone number (Baileys Multi-Device).</p>
+
+      <!-- Instance Overview & Quick Stats Strip -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        <div class="bg-white dark:bg-slate-800/90 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Total Instances</p>
+            <h3 id="statTotalInstances" class="text-xl sm:text-2xl font-black text-slate-800 dark:text-slate-100 mt-0.5">--</h3>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-server"></i>
+          </div>
         </div>
-        <div class="flex items-center gap-2">
-          <button onclick="fetchInstances()" class="text-xs font-medium px-3 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 transition flex items-center gap-1.5">
-            <i class="fa-solid fa-arrows-rotate"></i>
-            <span>Refresh</span>
+
+        <div class="bg-white dark:bg-slate-800/90 rounded-2xl p-4 border border-emerald-500/30 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Online & Active</p>
+            <h3 id="statOnlineInstances" class="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">--</h3>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-wifi"></i>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800/90 rounded-2xl p-4 border border-amber-500/30 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">Needs Pairing</p>
+            <h3 id="statOfflineInstances" class="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 mt-0.5">--</h3>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-qrcode"></i>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-800/90 rounded-2xl p-4 border border-cyan-500/30 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-cyan-600 dark:text-cyan-400">Baileys Engine</p>
+            <h3 class="text-sm font-bold text-cyan-600 dark:text-cyan-400 mt-1">Multi-Device</h3>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-cyan-100 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 flex items-center justify-center text-lg">
+            <i class="fa-brands fa-whatsapp"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Toolbar & Search / Filters -->
+      <div class="bg-white dark:bg-slate-800/90 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div class="relative flex-1 max-w-md">
+            <input id="instanceSearchInput" oninput="filterInstances()" type="text" placeholder="Search by name, ID, or phone number..." class="w-full text-xs rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 pl-9 pr-3 py-2 text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-emerald-500">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+          </div>
+          <div class="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-900/60 rounded-xl">
+            <button onclick="setInstanceFilter('all')" id="filterBtn-all" class="instance-filter-btn text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-600 text-white shadow-sm transition">All</button>
+            <button onclick="setInstanceFilter('open')" id="filterBtn-open" class="instance-filter-btn text-xs font-semibold px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 transition">Connected</button>
+            <button onclick="setInstanceFilter('close')" id="filterBtn-close" class="instance-filter-btn text-xs font-semibold px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 transition">Offline</button>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0">
+          <button onclick="fetchInstances()" class="text-xs font-semibold px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition flex items-center gap-1.5 active:scale-95">
+            <i class="fa-solid fa-rotate"></i>
+            <span>Refresh All</span>
           </button>
-          <button onclick="openCreateInstanceModal()" class="text-xs font-semibold px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow transition flex items-center gap-1.5">
+          <button onclick="openCreateInstanceModal()" class="text-xs font-bold px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-sm hover:shadow transition flex items-center gap-1.5 active:scale-95">
             <i class="fa-solid fa-plus"></i>
             <span>Create New Instance</span>
           </button>
@@ -998,55 +1051,178 @@
   </main>
 
   <!-- ======================================================================= -->
-  <!-- MODAL: QR CODE & CONNECTION PAIRING -->
+  <!-- FLOATING TOAST NOTIFICATION CONTAINER -->
   <!-- ======================================================================= -->
-  <div id="qrModal" class="fixed inset-0 z-50 hidden bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-2xl space-y-6 text-center">
-      <div>
-        <div class="w-12 h-12 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-2xl mb-2">
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 max-w-sm pointer-events-none"></div>
+
+  <!-- ======================================================================= -->
+  <!-- ADVANCED MODAL: WHATSAPP CONNECTION & PAIRING -->
+  <!-- ======================================================================= -->
+  <div id="pairingModal" class="fixed inset-0 z-50 hidden bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-lg rounded-3xl p-6 border border-slate-200 dark:border-slate-700 shadow-2xl space-y-5 text-center transition-all overflow-hidden relative">
+      <!-- Glow background decoration -->
+      <div class="absolute -top-12 -right-12 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+      <!-- Header with Instance Name -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700/60">
+        <div class="flex items-center gap-2.5 text-left">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white text-lg shadow-md shrink-0">
+            <i class="fa-brands fa-whatsapp"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold flex items-center gap-2">
+              Link WhatsApp
+              <span id="pairingModalInstanceBadge" class="text-xs font-mono font-bold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
+                instance
+              </span>
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Connect via 8-Digit Code or QR Code Camera</p>
+          </div>
+        </div>
+        <button onclick="closePairingModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 transition flex items-center justify-center">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Dual Method Tabs -->
+      <div class="flex p-1 bg-slate-100 dark:bg-slate-900 rounded-2xl">
+        <button onclick="switchPairingTab('code')" id="pTabBtn-code" class="flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 bg-emerald-600 text-white shadow-sm">
+          <i class="fa-solid fa-key"></i>
+          <span>8-Digit Code (No Camera)</span>
+        </button>
+        <button onclick="switchPairingTab('qr')" id="pTabBtn-qr" class="flex-1 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200">
           <i class="fa-solid fa-qrcode"></i>
+          <span>Camera QR Code</span>
+        </button>
+      </div>
+
+      <!-- Already Connected Alert (Hidden unless open) -->
+      <div id="pairingAlreadyConnectedAlert" class="hidden p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 text-left space-y-2">
+        <div class="flex items-center gap-2 font-bold text-sm">
+          <i class="fa-solid fa-circle-check text-emerald-600 dark:text-emerald-400 text-base"></i>
+          <span>Instance is Already Connected & Active!</span>
         </div>
-        <h3 class="text-lg font-bold">Scan WhatsApp QR Code</h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          Open WhatsApp on your phone &rarr; <strong>Settings / Linked Devices</strong> &rarr; <strong>Link a Device</strong> and point your camera here.
+        <p class="text-xs text-emerald-800 dark:text-emerald-300/90 leading-relaxed">
+          This WhatsApp session is already paired with phone number <strong id="alreadyConnectedPhone" class="font-mono">...</strong>. You can send messages directly without re-linking!
         </p>
-      </div>
-
-      <!-- QR Container -->
-      <div class="relative mx-auto w-64 h-64 bg-slate-100 dark:bg-slate-900 rounded-2xl flex items-center justify-center border-2 border-dashed border-slate-300 dark:border-slate-700 overflow-hidden p-2">
-        <div id="qrLoadingSpinner" class="flex flex-col items-center justify-center space-y-2 text-slate-400">
-          <i class="fa-solid fa-circle-notch fa-spin text-3xl text-emerald-500"></i>
-          <span class="text-xs">Generating Pairing QR...</span>
-        </div>
-        <img id="qrImageTag" class="hidden w-full h-full object-contain rounded-xl" alt="WhatsApp QR Code">
-      </div>
-
-      <!-- Live status / Pairing Code -->
-      <div class="space-y-2">
-        <div id="qrStatusPill" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800">
-          <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
-          <span id="qrStatusText">Waiting for scan... (Auto-checking)</span>
-        </div>
-        <div id="qrPairingCodeText" class="text-xs font-mono text-slate-400 py-1"></div>
-      </div>
-
-      <!-- Or link with phone number -->
-      <div class="pt-3 border-t border-slate-200 dark:border-slate-700 space-y-2 text-left">
-        <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Or Link With Phone Number Code (No Camera):</label>
-        <div class="flex gap-2">
-          <input id="pairingCodePhoneInput" type="text" placeholder="e.g. 15551234567 (Country code + number)" class="flex-1 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-slate-100 outline-none font-mono">
-          <button onclick="requestPairingCodeWithNumber()" class="text-xs font-semibold px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition shrink-0">
-            Get 8-Digit Code
+        <div class="pt-1 flex gap-2">
+          <button onclick="closePairingModal(); switchTab('send');" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition">
+            Go to Send Messages
+          </button>
+          <button onclick="restartInstance(currentPollingInstance); closePairingModal();" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition">
+            Restart Engine
           </button>
         </div>
-        <p class="text-[10px] text-slate-400">On your phone WhatsApp: Settings &rarr; Linked Devices &rarr; Link with phone number instead &rarr; type the 8-digit code.</p>
       </div>
 
-      <div class="flex gap-2">
-        <button onclick="refreshQrCode()" class="flex-1 py-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-xs font-semibold transition">
-          <i class="fa-solid fa-rotate mr-1"></i> Refresh QR
+      <!-- TAB 1: 8-DIGIT SECRET CODE (DEFAULT) -->
+      <div id="pairingTabContent-code" class="space-y-4 text-left">
+        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 space-y-3">
+          <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">
+            Enter WhatsApp Phone Number to Link:
+          </label>
+          <div class="flex gap-2">
+            <div class="relative w-28 shrink-0">
+              <span class="absolute left-3 top-2.5 text-xs text-slate-400 font-bold">+</span>
+              <input id="pairingCountryCodeInput" type="text" value="91" placeholder="91" maxlength="4" class="w-full text-xs font-mono font-bold rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 pl-6 pr-2 py-2 text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+            <div class="relative flex-1">
+              <input id="pairingPhoneNumberInput" type="tel" placeholder="e.g. 9777767188" class="w-full text-xs font-mono font-bold rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-3 py-2 text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+          </div>
+          <p class="text-[11px] text-slate-400">
+            India: <code class="text-emerald-500 font-bold">91</code> + 10 digits (e.g. <strong class="text-slate-700 dark:text-slate-300">9777767188</strong>). No spaces, dashes, or '+'.
+          </p>
+
+          <button onclick="request8DigitPairingCode()" id="btnGeneratePairingCode" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2 active:scale-95">
+            <i class="fa-solid fa-key"></i>
+            <span>Generate 8-Digit Secret Code</span>
+          </button>
+        </div>
+
+        <!-- Dynamic Code Display Area -->
+        <div id="pairingCodeResultContainer" class="hidden text-center p-5 rounded-2xl bg-gradient-to-br from-emerald-950 via-slate-900 to-slate-950 text-white border border-emerald-500/40 shadow-lg space-y-3">
+          <div class="flex items-center justify-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-widest">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+            <span>Your 8-Digit WhatsApp Code</span>
+          </div>
+
+          <div class="flex items-center justify-center gap-2 sm:gap-3 py-1">
+            <div id="pairingCodePart1" class="px-4 py-2 rounded-xl bg-black/60 border border-emerald-500/40 font-mono text-2xl sm:text-3xl font-black text-emerald-300 tracking-wider shadow-inner select-all">
+              ----
+            </div>
+            <span class="text-2xl font-bold text-emerald-500">-</span>
+            <div id="pairingCodePart2" class="px-4 py-2 rounded-xl bg-black/60 border border-emerald-500/40 font-mono text-2xl sm:text-3xl font-black text-emerald-300 tracking-wider shadow-inner select-all">
+              ----
+            </div>
+          </div>
+
+          <button onclick="copyGeneratedPairingCode()" id="btnCopyPairingCode" class="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition active:scale-95 shadow-sm">
+            <i class="fa-regular fa-copy"></i>
+            <span id="btnCopyPairingCodeText">Copy Code</span>
+          </button>
+
+          <!-- Step by Step instructions -->
+          <div class="pt-2 border-t border-emerald-900/60 text-left text-xs text-slate-300 space-y-1.5">
+            <p class="font-bold text-emerald-400 text-[11px] uppercase tracking-wider">How to link in WhatsApp on your phone:</p>
+            <ol class="list-decimal list-inside space-y-1 text-[11px] text-slate-300">
+              <li>Open <strong>WhatsApp</strong> on your phone</li>
+              <li>Tap <strong>Settings (or ⋮ menu) &rarr; Linked Devices &rarr; Link a Device</strong></li>
+              <li>Tap <strong>"Link with phone number instead"</strong> at the bottom</li>
+              <li>Type this 8-character code: <strong id="codeInInstructions" class="text-emerald-400 font-mono">...</strong></li>
+            </ol>
+          </div>
+
+          <div id="pairingWaitingPill" class="flex items-center justify-center gap-2 text-[11px] text-emerald-300/80 pt-1">
+            <i class="fa-solid fa-circle-notch fa-spin text-emerald-400"></i>
+            <span>Waiting for you to enter the code in WhatsApp...</span>
+          </div>
+        </div>
+
+        <!-- Loading spinner while requesting code -->
+        <div id="pairingCodeLoadingBox" class="hidden py-8 text-center space-y-2 text-slate-400">
+          <i class="fa-solid fa-circle-notch fa-spin text-3xl text-emerald-500"></i>
+          <p class="text-xs font-medium text-slate-600 dark:text-slate-300">Communicating with WhatsApp servers...</p>
+          <p class="text-[11px] text-slate-400">Negotiating pairing session (usually 1–3 seconds)</p>
+        </div>
+      </div>
+
+      <!-- TAB 2: CAMERA QR CODE -->
+      <div id="pairingTabContent-qr" class="hidden space-y-4 text-center">
+        <p class="text-xs text-slate-500 dark:text-slate-400">
+          Open WhatsApp &rarr; <strong>Settings / Linked Devices</strong> &rarr; <strong>Link a Device</strong> and point your camera here.
+        </p>
+
+        <!-- QR Display Box -->
+        <div class="relative mx-auto w-64 h-64 bg-slate-100 dark:bg-slate-900 rounded-2xl flex items-center justify-center border-2 border-dashed border-slate-300 dark:border-slate-700 overflow-hidden p-2">
+          <div id="qrLoadingSpinner" class="flex flex-col items-center justify-center space-y-2 text-slate-400">
+            <i class="fa-solid fa-circle-notch fa-spin text-3xl text-emerald-500"></i>
+            <span class="text-xs">Generating Pairing QR...</span>
+          </div>
+          <img id="qrImageTag" class="hidden w-full h-full object-contain rounded-xl" alt="WhatsApp QR Code">
+        </div>
+
+        <div class="space-y-2">
+          <div id="qrStatusPill" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800">
+            <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+            <span id="qrStatusText">Waiting for scan... (Auto-checking)</span>
+          </div>
+        </div>
+
+        <div class="flex gap-2 pt-1">
+          <button onclick="refreshQrCode()" class="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-xs font-semibold transition flex items-center justify-center gap-1.5">
+            <i class="fa-solid fa-rotate"></i>
+            <span>Refresh QR</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="pt-2 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
+        <button onclick="restartInstance(currentPollingInstance)" class="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition flex items-center gap-1">
+          <i class="fa-solid fa-rotate"></i>
+          <span>Restart Socket</span>
         </button>
-        <button onclick="closeQrModal()" class="flex-1 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition">
+        <button onclick="closePairingModal()" class="px-5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-bold transition">
           Done / Close
         </button>
       </div>
@@ -1731,8 +1907,56 @@
     }
 
     // -------------------------------------------------------------------------
-    // 6. INSTANCES LOGIC
+    // 6. TOAST NOTIFICATION SYSTEM
     // -------------------------------------------------------------------------
+    function showToast(message, type = 'info', duration = 3500) {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+
+      const toast = document.createElement('div');
+      toast.className = 'pointer-events-auto flex items-start gap-3 p-3.5 rounded-2xl shadow-xl border text-xs font-medium transition-all duration-300 transform translate-y-2 opacity-0';
+
+      let bg = 'bg-slate-900 text-white border-slate-700';
+      let icon = '<i class="fa-solid fa-circle-info text-cyan-400 text-sm"></i>';
+
+      if (type === 'success') {
+        bg = 'bg-emerald-950 text-emerald-100 border-emerald-600/50';
+        icon = '<i class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>';
+      } else if (type === 'error') {
+        bg = 'bg-rose-950 text-rose-100 border-rose-600/50';
+        icon = '<i class="fa-solid fa-circle-exclamation text-rose-400 text-sm"></i>';
+      } else if (type === 'warning') {
+        bg = 'bg-amber-950 text-amber-100 border-amber-600/50';
+        icon = '<i class="fa-solid fa-triangle-exclamation text-amber-400 text-sm"></i>';
+      }
+
+      toast.className += ' ' + bg;
+      toast.innerHTML = `
+        <div class="shrink-0 mt-0.5">${icon}</div>
+        <div class="flex-1 leading-snug">${message}</div>
+        <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white shrink-0 ml-1">
+          <i class="fa-solid fa-xmark text-xs"></i>
+        </button>
+      `;
+
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }, 20);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-x-4');
+        setTimeout(() => toast.remove(), 300);
+      }, duration);
+    }
+
+    // -------------------------------------------------------------------------
+    // 7. INSTANCES LOGIC & ADVANCED CONTROLS
+    // -------------------------------------------------------------------------
+    let instanceFilter = 'all';
+    let instanceSearchQuery = '';
+
     async function fetchInstances() {
       const grid = document.getElementById('instanceGrid');
       grid.innerHTML = `
@@ -1748,6 +1972,7 @@
         const data = await res.json();
         activeInstances = Array.isArray(data) ? data : (data.instances || []);
 
+        updateInstanceStats();
         populateInstanceDropdowns();
         renderInstanceCards();
       } catch (err) {
@@ -1760,9 +1985,48 @@
       }
     }
 
+    function updateInstanceStats() {
+      const total = activeInstances.length;
+      let online = 0;
+      let offline = 0;
+
+      activeInstances.forEach(item => {
+        const state = (item.connectionStatus || item.instance?.status || 'close').toLowerCase();
+        if (state === 'open') online++;
+        else offline++;
+      });
+
+      const totalEl = document.getElementById('statTotalInstances');
+      const onlineEl = document.getElementById('statOnlineInstances');
+      const offlineEl = document.getElementById('statOfflineInstances');
+
+      if (totalEl) totalEl.textContent = total;
+      if (onlineEl) onlineEl.textContent = online;
+      if (offlineEl) offlineEl.textContent = offline;
+    }
+
+    function setInstanceFilter(filter) {
+      instanceFilter = filter;
+      document.querySelectorAll('.instance-filter-btn').forEach(btn => {
+        btn.className = 'instance-filter-btn text-xs font-semibold px-3 py-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:text-slate-900 transition';
+      });
+      const activeBtn = document.getElementById(`filterBtn-${filter}`);
+      if (activeBtn) {
+        activeBtn.className = 'instance-filter-btn text-xs font-bold px-3 py-1.5 rounded-lg bg-emerald-600 text-white shadow-sm transition';
+      }
+      renderInstanceCards();
+    }
+
+    function filterInstances() {
+      const input = document.getElementById('instanceSearchInput');
+      instanceSearchQuery = input ? input.value.trim().toLowerCase() : '';
+      renderInstanceCards();
+    }
+
     function populateInstanceDropdowns() {
       const sendSelect = document.getElementById('sendInstanceSelect');
       const webhookSelect = document.getElementById('webhookInstanceSelect');
+      if (!sendSelect || !webhookSelect) return;
 
       const options = activeInstances.map(inst => {
         const name = inst.name || inst.instanceName || inst.instance?.instanceName;
@@ -1777,7 +2041,7 @@
 
     function editInstanceName(name) {
       const current = instanceAliases[name] || name;
-      const newName = prompt(`Enter friendly display name / alias for instance "${name}" (e.g. Sales Phone, Support Desk, Notification Bot):`, current);
+      const newName = prompt(`Enter friendly display name / alias for instance "${name}" (e.g. BJCC Notifications, Support Desk, Sales Bot):`, current);
       if (newName === null) return;
       const trimmed = newName.trim();
       if (!trimmed || trimmed === name) {
@@ -1788,40 +2052,72 @@
       localStorage.setItem('evo_instance_aliases', JSON.stringify(instanceAliases));
       renderInstanceCards();
       populateInstanceDropdowns();
+      showToast(`Updated display name for "${name}"`, 'success');
     }
 
     function renderInstanceCards() {
       const grid = document.getElementById('instanceGrid');
-      if (activeInstances.length === 0) {
+      if (!grid) return;
+
+      let filtered = activeInstances.filter(item => {
+        const name = (item.name || item.instanceName || item.instance?.instanceName || '').toLowerCase();
+        const alias = (instanceAliases[name] || '').toLowerCase();
+        const phone = (item.ownerJid || item.number || '').toLowerCase();
+        const status = (item.connectionStatus || item.instance?.status || 'close').toLowerCase();
+
+        // Search match
+        if (instanceSearchQuery) {
+          const match = name.includes(instanceSearchQuery) || alias.includes(instanceSearchQuery) || phone.includes(instanceSearchQuery);
+          if (!match) return false;
+        }
+
+        // Filter match
+        if (instanceFilter === 'open' && status !== 'open') return false;
+        if (instanceFilter === 'close' && status === 'open') return false;
+
+        return true;
+      });
+
+      if (filtered.length === 0) {
         grid.innerHTML = `
-          <div class="col-span-full py-16 text-center border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-8 space-y-3">
+          <div class="col-span-full py-16 text-center border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl p-8 space-y-3">
             <div class="w-16 h-16 mx-auto rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 text-2xl">
-              <i class="fa-solid fa-mobile-screen"></i>
+              <i class="fa-brands fa-whatsapp"></i>
             </div>
             <h3 class="font-bold text-base">No WhatsApp instances found</h3>
-            <p class="text-xs text-slate-500 max-w-sm mx-auto">Create your first instance to generate a QR code and connect your WhatsApp account.</p>
-            <button onclick="openCreateInstanceModal()" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition">
+            <p class="text-xs text-slate-500 max-w-sm mx-auto">Create a Baileys instance or adjust your search filter to connect your WhatsApp account.</p>
+            <button onclick="openCreateInstanceModal()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold transition shadow-sm">
               Create New Instance Now
             </button>
           </div>`;
         return;
       }
 
-      grid.innerHTML = activeInstances.map(item => {
+      grid.innerHTML = filtered.map(item => {
         const name = item.name || item.instanceName || item.instance?.instanceName;
         const status = (item.connectionStatus || item.instance?.status || 'close').toLowerCase();
-        const phone = item.ownerJid || item.number || 'Not paired yet';
+        const rawPhone = item.ownerJid || item.number || '';
+        const phoneDisplay = rawPhone ? '+' + rawPhone.replace('@s.whatsapp.net', '') : 'Not paired yet';
         const isConnected = status === 'open';
         const alias = instanceAliases[name] || '';
         const displayName = alias || name;
+        const contactCount = item._count?.Contact || item.contactsCount || 0;
+        const alwaysOnline = item.Setting?.alwaysOnline !== false;
 
         return `
-          <div class="bg-white dark:bg-slate-800/90 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition space-y-4 flex flex-col justify-between">
-            <div class="space-y-3">
-              <div class="flex items-start justify-between">
+          <div class="bg-white dark:bg-slate-800/90 rounded-3xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition space-y-4 flex flex-col justify-between relative overflow-hidden group">
+            <!-- Subtle top accent line -->
+            <div class="absolute top-0 left-0 right-0 h-1 ${isConnected ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : 'bg-gradient-to-r from-amber-500 to-rose-400'}"></div>
+
+            <div class="space-y-3.5">
+              <!-- Top identity row -->
+              <div class="flex items-start justify-between gap-3 pt-1">
                 <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl ${isConnected ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'} flex items-center justify-center text-lg">
-                    <i class="fa-brands fa-whatsapp"></i>
+                  <div class="relative">
+                    <div class="w-11 h-11 rounded-2xl ${isConnected ? 'bg-gradient-to-tr from-emerald-600 to-teal-500 text-white shadow-md' : 'bg-slate-100 dark:bg-slate-700 text-slate-400'} flex items-center justify-center text-xl transition">
+                      <i class="fa-brands fa-whatsapp"></i>
+                    </div>
+                    <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white dark:border-slate-800 ${isConnected ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}"></span>
                   </div>
                   <div>
                     <div class="flex items-center gap-1.5">
@@ -1830,78 +2126,352 @@
                         <i class="fa-solid fa-pen"></i>
                       </button>
                     </div>
-                    ${alias ? `<p class="text-[10px] text-slate-400 font-mono">API ID: <strong>${name}</strong></p>` : ''}
-                    <p class="text-[11px] font-mono text-slate-400">${phone.replace('@s.whatsapp.net', '')}</p>
+                    <div class="flex items-center gap-2 mt-0.5">
+                      <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-semibold">
+                        ID: ${name}
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full ${isConnected ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800' : 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-400 border border-rose-300 dark:border-rose-800'}">
-                  ${isConnected ? '● Connected' : '○ Disconnected'}
+
+                <span class="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full ${isConnected ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 flex items-center gap-1.5' : 'bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800 flex items-center gap-1.5'}">
+                  <span class="w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-500 animate-ping' : 'bg-amber-500'}"></span>
+                  <span>${isConnected ? 'Online' : 'Needs Pairing'}</span>
                 </span>
+              </div>
+
+              <!-- Phone & Details Pill Box -->
+              <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/80 space-y-1.5 text-xs">
+                <div class="flex items-center justify-between">
+                  <span class="text-slate-400 font-medium text-[11px]">WhatsApp Number:</span>
+                  <span class="font-mono font-bold ${isConnected ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}">
+                    ${phoneDisplay}
+                  </span>
+                </div>
+                <div class="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                  <span>Engine: <strong>Baileys MD</strong></span>
+                  <span>${contactCount > 0 ? `Contacts: <strong>${contactCount.toLocaleString()}</strong>` : (alwaysOnline ? 'Keep-Alive: <strong>Active</strong>' : 'Ready')}</span>
+                </div>
               </div>
             </div>
 
-            <div class="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
-              ${!isConnected ? `
-                <button onclick="connectAndShowQR('${name}')" class="flex-1 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
-                  <i class="fa-solid fa-qrcode"></i>
-                  <span>Scan QR</span>
-                </button>
+            <!-- Action Controls Grid -->
+            <div class="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
+              ${isConnected ? `
+                <!-- CONNECTED ACTIONS -->
+                <div class="grid grid-cols-2 gap-2">
+                  <button onclick="restartInstance('${name}')" id="btnRestart-${name}" class="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 shadow-sm">
+                    <i class="fa-solid fa-rotate"></i>
+                    <span>Restart Engine</span>
+                  </button>
+                  <button onclick="reconnectInstance('${name}')" id="btnReconnect-${name}" class="py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95">
+                    <i class="fa-solid fa-bolt"></i>
+                    <span>Reconnect</span>
+                  </button>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button onclick="quickSendTestMsg('${name}')" class="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm active:scale-95">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <span>Send Test Message</span>
+                  </button>
+                  <button onclick="logoutInstance('${name}')" title="Disconnect Session" class="p-2 rounded-xl text-rose-500 hover:text-white hover:bg-rose-600 dark:hover:bg-rose-700 border border-rose-200 dark:border-rose-900 transition text-xs">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                  </button>
+                </div>
               ` : `
-                <button onclick="logoutInstance('${name}')" class="flex-1 py-2 rounded-lg bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 text-xs font-semibold transition">
-                  <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> Disconnect
-                </button>
+                <!-- DISCONNECTED / NEEDS PAIRING ACTIONS -->
+                <div class="grid grid-cols-2 gap-2">
+                  <button onclick="openPairingModal('${name}', 'code')" class="py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md active:scale-95">
+                    <i class="fa-solid fa-key"></i>
+                    <span>8-Digit Code</span>
+                  </button>
+                  <button onclick="openPairingModal('${name}', 'qr')" class="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95">
+                    <i class="fa-solid fa-qrcode"></i>
+                    <span>Scan QR</span>
+                  </button>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button onclick="restartInstance('${name}')" id="btnRestart-${name}" class="flex-1 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 text-xs font-semibold transition flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-rotate"></i>
+                    <span>Restart Engine</span>
+                  </button>
+                  <button onclick="deleteInstance('${name}')" title="Delete Instance" class="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition text-xs">
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                </div>
               `}
-              <button onclick="editInstanceName('${name}')" title="Rename / Set Alias" class="p-2 rounded-lg text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition text-xs">
-                <i class="fa-solid fa-pen-to-square"></i>
-              </button>
-              <button onclick="deleteInstance('${name}')" title="Delete Instance" class="p-2 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition">
-                <i class="fa-solid fa-trash-can"></i>
-              </button>
             </div>
           </div>
         `;
       }).join('');
     }
 
-    // Connect & Show QR Code
-    async function connectAndShowQR(instanceName) {
+    // -------------------------------------------------------------------------
+    // 8. WORKING INSTANCE RESTART, RECONNECT, & ACTIONS
+    // -------------------------------------------------------------------------
+    async function restartInstance(name) {
+      if (!name) return;
+      const btn = document.getElementById(`btnRestart-${name}`);
+      const originalHtml = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i><span>Restarting...</span>`;
+      }
+
+      showToast(`Restarting WhatsApp engine for "${name}"...`, 'info', 3000);
+
+      try {
+        // Evolution API v2 uses POST /instance/restart/:instance
+        let res = await fetch(`${config.serverUrl}/instance/restart/${name}`, {
+          method: 'POST',
+          headers: { 'apikey': config.apiKey }
+        });
+
+        // Fallback to PUT if POST fails
+        if (!res.ok && res.status === 404) {
+          res = await fetch(`${config.serverUrl}/instance/restart/${name}`, {
+            method: 'PUT',
+            headers: { 'apikey': config.apiKey }
+          });
+        }
+
+        // Wait 2.5 seconds for socket reboot
+        await new Promise(r => setTimeout(r, 2500));
+
+        showToast(`Instance "${name}" restarted successfully! 🎉`, 'success', 3500);
+        await fetchInstances();
+      } catch (err) {
+        showToast(`Restart failed: ${err.message}`, 'error', 4000);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = originalHtml;
+        }
+      }
+    }
+
+    async function reconnectInstance(name) {
+      if (!name) return;
+      showToast(`Triggering reconnection for "${name}"...`, 'info', 2500);
+
+      try {
+        await fetch(`${config.serverUrl}/instance/connect/${name}`, {
+          headers: { 'apikey': config.apiKey }
+        });
+        await new Promise(r => setTimeout(r, 1500));
+        await fetchInstances();
+        showToast(`Reconnection signal dispatched for "${name}"`, 'success', 3000);
+      } catch (err) {
+        showToast(`Reconnect failed: ${err.message}`, 'error', 3500);
+      }
+    }
+
+    function quickSendTestMsg(name) {
+      switchTab('send');
+      const select = document.getElementById('sendInstanceSelect');
+      if (select) select.value = name;
+      showToast(`Selected instance "${name}" for message compose`, 'info', 2000);
+    }
+
+    // -------------------------------------------------------------------------
+    // 9. PAIRING MODAL (8-DIGIT SECRET CODE & QR CODE STREAM)
+    // -------------------------------------------------------------------------
+    let activePairingTab = 'code';
+    let pairingCodePoller = null;
+    let currentRawPairingCode = '';
+
+    async function openPairingModal(instanceName, initialTab = 'code') {
       currentPollingInstance = instanceName;
-      document.getElementById('qrModal').classList.remove('hidden');
-      document.getElementById('qrLoadingSpinner').classList.remove('hidden');
-      document.getElementById('qrImageTag').classList.add('hidden');
-      document.getElementById('qrStatusText').textContent = 'Connecting to WhatsApp Baileys engine...';
-      document.getElementById('qrPairingCodeText').textContent = '';
+      document.getElementById('pairingModalInstanceBadge').textContent = instanceName;
 
-      await refreshQrCode();
+      // Reset Modal Views
+      document.getElementById('pairingCodeResultContainer').classList.add('hidden');
+      document.getElementById('pairingCodeLoadingBox').classList.add('hidden');
+      document.getElementById('pairingAlreadyConnectedAlert').classList.add('hidden');
 
-      if (pollInterval) clearInterval(pollInterval);
-      pollInterval = setInterval(async () => {
+      // Check current connection state
+      try {
+        const stateRes = await fetch(`${config.serverUrl}/instance/connectionState/${instanceName}`, {
+          headers: { 'apikey': config.apiKey }
+        });
+        const stateData = await stateRes.json();
+        const state = (stateData.instance?.state || stateData.state || '').toLowerCase();
+
+        if (state === 'open') {
+          const instObj = activeInstances.find(i => (i.name || i.instanceName) === instanceName);
+          const rawPhone = instObj?.ownerJid || instObj?.number || 'linked';
+          document.getElementById('alreadyConnectedPhone').textContent = rawPhone.replace('@s.whatsapp.net', '');
+          document.getElementById('pairingAlreadyConnectedAlert').classList.remove('hidden');
+        }
+      } catch (e) {}
+
+      // Pre-fill phone if existing instance has number or default Indian format
+      const instObj = activeInstances.find(i => (i.name || i.instanceName) === instanceName);
+      const rawNum = (instObj?.ownerJid || instObj?.number || '').replace(/[^0-9]/g, '');
+      const phoneInput = document.getElementById('pairingPhoneNumberInput');
+      const countryInput = document.getElementById('pairingCountryCodeInput');
+
+      if (rawNum && rawNum.length >= 10) {
+        if (rawNum.startsWith('91') && rawNum.length === 12) {
+          countryInput.value = '91';
+          phoneInput.value = rawNum.slice(2);
+        } else {
+          phoneInput.value = rawNum;
+        }
+      } else if (!phoneInput.value) {
+        countryInput.value = '91';
+        phoneInput.value = '9777767188';
+      }
+
+      document.getElementById('pairingModal').classList.remove('hidden');
+      switchPairingTab(initialTab);
+    }
+
+    function switchPairingTab(tab) {
+      activePairingTab = tab;
+      const btnCode = document.getElementById('pTabBtn-code');
+      const btnQr = document.getElementById('pTabBtn-qr');
+      const contentCode = document.getElementById('pairingTabContent-code');
+      const contentQr = document.getElementById('pairingTabContent-qr');
+
+      if (tab === 'code') {
+        btnCode.className = 'flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 bg-emerald-600 text-white shadow-sm';
+        btnQr.className = 'flex-1 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200';
+        contentCode.classList.remove('hidden');
+        contentQr.classList.add('hidden');
+      } else {
+        btnQr.className = 'flex-1 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 bg-emerald-600 text-white shadow-sm';
+        btnCode.className = 'flex-1 py-2 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200';
+        contentQr.classList.remove('hidden');
+        contentCode.classList.add('hidden');
+        refreshQrCode();
+        startPairingStatePoller();
+      }
+    }
+
+    // Request 8-Digit Secret Pairing Code (Fixed with Handshake Polling)
+    async function request8DigitPairingCode() {
+      if (!currentPollingInstance) return;
+
+      const country = document.getElementById('pairingCountryCodeInput').value.replace(/[^0-9]/g, '') || '91';
+      let phone = document.getElementById('pairingPhoneNumberInput').value.replace(/[^0-9]/g, '');
+
+      if (!phone) {
+        showToast('Please enter your 10-digit WhatsApp phone number', 'warning');
+        return;
+      }
+
+      // If phone starts with country code already, remove duplicate
+      if (phone.startsWith(country) && phone.length > country.length + 8) {
+        phone = phone.slice(country.length);
+      }
+
+      const fullPhoneNumber = country + phone;
+
+      const btn = document.getElementById('btnGeneratePairingCode');
+      const loadingBox = document.getElementById('pairingCodeLoadingBox');
+      const resultBox = document.getElementById('pairingCodeResultContainer');
+
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i><span>Negotiating Handshake...</span>`;
+      loadingBox.classList.remove('hidden');
+      resultBox.classList.add('hidden');
+
+      try {
+        // Step 1: Initiate pairing connection with number query parameter
+        const initialRes = await fetch(`${config.serverUrl}/instance/connect/${currentPollingInstance}?number=${fullPhoneNumber}`, {
+          headers: { 'apikey': config.apiKey }
+        });
+        const initialData = await initialRes.json();
+
+        // Step 2: Poll every 1.5s until Baileys yields the pairingCode
+        let attempts = 0;
+        let foundCode = initialData.pairingCode || initialData.code || initialData.pairing_code;
+
+        if (!foundCode || foundCode.length > 12) {
+          // Poll for 8-digit code
+          while (attempts < 10) {
+            attempts++;
+            await new Promise(r => setTimeout(r, 1500));
+
+            const pollRes = await fetch(`${config.serverUrl}/instance/connect/${currentPollingInstance}`, {
+              headers: { 'apikey': config.apiKey }
+            });
+            const pollData = await pollRes.json();
+
+            if (pollData.pairingCode && typeof pollData.pairingCode === 'string') {
+              foundCode = pollData.pairingCode;
+              break;
+            }
+          }
+        }
+
+        if (foundCode && typeof foundCode === 'string') {
+          currentRawPairingCode = foundCode.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+
+          const part1 = currentRawPairingCode.slice(0, 4);
+          const part2 = currentRawPairingCode.slice(4);
+
+          document.getElementById('pairingCodePart1').textContent = part1;
+          document.getElementById('pairingCodePart2').textContent = part2;
+          document.getElementById('codeInInstructions').textContent = `${part1}-${part2}`;
+
+          loadingBox.classList.add('hidden');
+          resultBox.classList.remove('hidden');
+          showToast(`Secret code generated: ${part1}-${part2}`, 'success', 4000);
+
+          // Start polling for connection confirmation
+          startPairingStatePoller();
+        } else {
+          loadingBox.classList.add('hidden');
+          showToast('WhatsApp server handshake timed out. Click Restart Socket and try again.', 'error', 4500);
+        }
+      } catch (err) {
+        loadingBox.classList.add('hidden');
+        showToast(`Request failed: ${err.message}`, 'error', 4000);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-key"></i><span>Generate 8-Digit Secret Code</span>`;
+      }
+    }
+
+    function copyGeneratedPairingCode() {
+      if (!currentRawPairingCode) return;
+      navigator.clipboard.writeText(currentRawPairingCode).then(() => {
+        const text = document.getElementById('btnCopyPairingCodeText');
+        text.textContent = 'Copied!';
+        showToast(`Copied code ${currentRawPairingCode} to clipboard!`, 'success', 2500);
+        setTimeout(() => { text.textContent = 'Copy Code'; }, 2000);
+      });
+    }
+
+    // Background poller that detects when user links on phone
+    function startPairingStatePoller() {
+      if (pairingCodePoller) clearInterval(pairingCodePoller);
+      pairingCodePoller = setInterval(async () => {
         if (!currentPollingInstance) return;
         try {
-          // If QR code image has not rendered yet, keep polling for it
-          const img = document.getElementById('qrImageTag');
-          if (img && img.classList.contains('hidden')) {
-            await refreshQrCode();
-          }
-
-          // Check if session has linked / connected
           const res = await fetch(`${config.serverUrl}/instance/connectionState/${currentPollingInstance}`, {
             headers: { 'apikey': config.apiKey }
           });
           const data = await res.json();
-          const state = data.instance?.state || data.state;
+          const state = (data.instance?.state || data.state || '').toLowerCase();
 
           if (state === 'open') {
-            document.getElementById('qrStatusText').textContent = 'WhatsApp Connected Successfully! 🎉';
-            document.getElementById('qrStatusPill').className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800';
-            clearInterval(pollInterval);
+            clearInterval(pairingCodePoller);
+            showToast(`WhatsApp Connected Successfully! 🎉`, 'success', 5000);
+            const statusPill = document.getElementById('qrStatusPill');
+            if (statusPill) {
+              statusPill.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800';
+              statusPill.innerHTML = `<i class="fa-solid fa-check"></i> Connected!`;
+            }
             setTimeout(() => {
-              closeQrModal();
+              closePairingModal();
               fetchInstances();
-            }, 1500);
+            }, 1200);
           }
         } catch (e) {}
-      }, 2500);
+      }, 2000);
     }
 
     async function refreshQrCode() {
@@ -1911,9 +2481,7 @@
           headers: { 'apikey': config.apiKey }
         });
         const data = await res.json();
-
         const base64 = data.base64 || data.qrcode?.base64 || data.code;
-        const pairingCode = data.pairingCode || data.pairing_code;
 
         if (base64 && typeof base64 === 'string' && base64.length > 50) {
           const img = document.getElementById('qrImageTag');
@@ -1924,47 +2492,20 @@
         } else if (data.count === 0) {
           document.getElementById('qrStatusText').textContent = 'Waiting for WhatsApp handshake... (auto-checking)';
         }
-
-        if (pairingCode) {
-          document.getElementById('qrPairingCodeText').innerHTML = `<span class="bg-emerald-500/20 text-emerald-400 font-bold px-3 py-1.5 rounded-lg text-lg tracking-widest border border-emerald-500/40">${pairingCode}</span>`;
-        }
       } catch (err) {
         document.getElementById('qrStatusText').textContent = 'Pairing status: ' + err.message;
       }
     }
 
-    async function requestPairingCodeWithNumber() {
-      if (!currentPollingInstance) return;
-      const phoneInput = document.getElementById('pairingCodePhoneInput');
-      const num = phoneInput ? phoneInput.value.replace(/[^0-9]/g, '') : '';
-      if (!num) {
-        alert('Please enter your phone number with country code (e.g. 15551234567 or 919876543210)');
-        return;
-      }
-      document.getElementById('qrPairingCodeText').textContent = 'Requesting 8-digit code from WhatsApp...';
-      try {
-        const res = await fetch(`${config.serverUrl}/instance/connect/${currentPollingInstance}?number=${num}`, {
-          headers: { 'apikey': config.apiKey }
-        });
-        const data = await res.json();
-        const code = data.pairingCode || data.pairing_code || data.code;
-        if (code && typeof code === 'string' && code.length >= 4) {
-          document.getElementById('qrPairingCodeText').innerHTML = `<span class="bg-emerald-500/20 text-emerald-400 font-bold px-3 py-1.5 rounded-lg text-xl tracking-widest border border-emerald-500/40 font-mono select-all">${code}</span><br><span class="text-[11px] text-emerald-400 mt-1 block">Type this 8-digit code in WhatsApp on your phone under <strong>Linked Devices &rarr; Link with phone number instead</strong></span>`;
-        } else {
-          document.getElementById('qrPairingCodeText').textContent = 'Waiting for WhatsApp pairing code response... (try refresh)';
-        }
-      } catch (err) {
-        document.getElementById('qrPairingCodeText').textContent = 'Error: ' + err.message;
-      }
-    }
-
-    function closeQrModal() {
-      if (pollInterval) clearInterval(pollInterval);
+    function closePairingModal() {
+      if (pairingCodePoller) clearInterval(pairingCodePoller);
       currentPollingInstance = null;
-      document.getElementById('qrModal').classList.add('hidden');
+      document.getElementById('pairingModal').classList.add('hidden');
     }
 
-    // Create Instance
+    // -------------------------------------------------------------------------
+    // 10. CREATE, LOGOUT, & DELETE INSTANCES
+    // -------------------------------------------------------------------------
     function openCreateInstanceModal() {
       document.getElementById('inputNewInstanceName').value = '';
       document.getElementById('createInstanceModal').classList.remove('hidden');
@@ -1979,7 +2520,7 @@
       const autoQr = document.getElementById('inputAutoQr').checked;
 
       if (!name) {
-        alert('Please provide a valid instance name.');
+        showToast('Please provide a valid instance name (lowercase letters & numbers).', 'warning');
         return;
       }
 
@@ -2004,15 +2545,16 @@
 
         if (res.ok) {
           closeCreateInstanceModal();
+          showToast(`Instance "${name}" created successfully!`, 'success');
           await fetchInstances();
           if (autoQr) {
-            connectAndShowQR(name);
+            openPairingModal(name, 'code');
           }
         } else {
-          alert(`Error: ${data.response?.message || data.message || 'Failed to create instance'}`);
+          showToast(`Error: ${data.response?.message || data.message || 'Failed to create instance'}`, 'error');
         }
       } catch (err) {
-        alert('Request failed: ' + err.message);
+        showToast(`Request failed: ${err.message}`, 'error');
       } finally {
         btn.disabled = false;
         btn.innerHTML = `<i class="fa-solid fa-plus"></i> Create Instance`;
@@ -2020,28 +2562,34 @@
     }
 
     async function logoutInstance(name) {
-      if (!confirm(`Disconnect instance "${name}"? You will need to scan QR code again.`)) return;
+      if (!confirm(`Disconnect instance "${name}"? You will need to link again.`)) return;
+      showToast(`Disconnecting session for "${name}"...`, 'info', 2500);
+
       try {
         await fetch(`${config.serverUrl}/instance/logout/${name}`, {
           method: 'DELETE',
           headers: { 'apikey': config.apiKey }
         });
-        fetchInstances();
+        showToast(`Instance "${name}" disconnected.`, 'warning');
+        await fetchInstances();
       } catch (e) {
-        alert('Failed to logout: ' + e.message);
+        showToast('Failed to logout: ' + e.message, 'error');
       }
     }
 
     async function deleteInstance(name) {
       if (!confirm(`Permanently delete instance "${name}" and clear session files?`)) return;
+      showToast(`Deleting instance "${name}"...`, 'info', 2500);
+
       try {
         await fetch(`${config.serverUrl}/instance/delete/${name}`, {
           method: 'DELETE',
           headers: { 'apikey': config.apiKey }
         });
-        fetchInstances();
+        showToast(`Instance "${name}" deleted.`, 'success');
+        await fetchInstances();
       } catch (e) {
-        alert('Failed to delete: ' + e.message);
+        showToast('Failed to delete: ' + e.message, 'error');
       }
     }
 
