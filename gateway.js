@@ -299,7 +299,131 @@ function cleanMediaPayload(rawBody) {
   }
 }
 
-// Transparent HTTP reverse proxy to Evolution API
+// Global API key from environment
+const GLOBAL_API_KEY = process.env.AUTHENTICATION_API_KEY || 'evol_whatsapp_api_secret_key_2026';
+
+// Checks if instance is online, and if offline or non-existent, instantly brings it online
+function ensureInstanceOnline(instanceName, callback) {
+  if (!instanceName) {
+    if (callback) callback(false);
+    return;
+  }
+  const apiKey = GLOBAL_API_KEY;
+
+  const stateReq = http.request({
+    hostname: INTERNAL_HOST,
+    port: INTERNAL_PORT,
+    path: `/instance/connectionState/${instanceName}`,
+    method: 'GET',
+    headers: { 'apikey': apiKey }
+  }, (res) => {
+    let body = '';
+    res.on('data', d => body += d);
+    res.on('end', () => {
+      let state = 'unknown';
+      let notFound = res.statusCode === 404;
+      try {
+        const json = JSON.parse(body);
+        if (json.response && json.response.message && json.response.message[0] && json.response.message[0].includes('does not exist')) {
+          notFound = true;
+        }
+        state = json?.instance?.state || json?.state || 'unknown';
+      } catch (e) {}
+
+      if (notFound) {
+        console.log(`[Gateway Auto-Revive] Instance "${instanceName}" does not exist. Creating...`);
+        const createPayload = JSON.stringify({
+          instanceName: instanceName,
+          token: apiKey,
+          qrcode: true,
+          integration: 'WHATSAPP-BAILEYS'
+        });
+        const createReq = http.request({
+          hostname: INTERNAL_HOST,
+          port: INTERNAL_PORT,
+          path: '/instance/create',
+          method: 'POST',
+          headers: {
+            'apikey': apiKey,
+            'content-type': 'application/json',
+            'content-length': Buffer.byteLength(createPayload)
+          }
+        }, (cRes) => {
+          cRes.resume();
+          cRes.on('end', () => {
+            console.log(`[Gateway Auto-Revive] Instance "${instanceName}" created. Waiting for socket connection...`);
+            setTimeout(() => {
+              if (callback) callback(true);
+            }, 1500);
+          });
+        });
+        createReq.on('error', () => { if (callback) callback(false); });
+        createReq.end(createPayload);
+        return;
+      }
+
+      if (state === 'open') {
+        if (callback) callback(true);
+      } else {
+        console.log(`[Gateway Auto-Revive] Instance "${instanceName}" is "${state}". Reconnecting socket...`);
+        const connReq = http.request({
+          hostname: INTERNAL_HOST,
+          port: INTERNAL_PORT,
+          path: `/instance/connect/${instanceName}`,
+          method: 'GET',
+          headers: { 'apikey': apiKey }
+        }, (cRes) => {
+          cRes.resume();
+          cRes.on('end', () => {
+            setTimeout(() => {
+              if (callback) callback(true);
+            }, 1500);
+          });
+        });
+        connReq.on('error', () => { if (callback) callback(false); });
+        connReq.end();
+      }
+    });
+  });
+
+  stateReq.on('error', () => {
+    if (callback) callback(false);
+  });
+  stateReq.end();
+}
+
+// Background poller: Ensures instance "hl" is brought online immediately once core is ready
+function initAutoRevivePoller() {
+  let attempts = 0;
+  const timer = setInterval(() => {
+    attempts++;
+    const healthReq = http.request({
+      hostname: INTERNAL_HOST,
+      port: INTERNAL_PORT,
+      path: '/',
+      method: 'GET'
+    }, (res) => {
+      res.resume();
+      if (res.statusCode === 200) {
+        clearInterval(timer);
+        console.log('[Gateway Auto-Revive] Evolution API core is ready! Ensuring instance "hl" is online...');
+        ensureInstanceOnline('hl', (ok) => {
+          console.log(`[Gateway Auto-Revive] Instance "hl" initialization complete (success: ${ok}).`);
+        });
+      }
+    });
+    healthReq.on('error', () => {});
+    healthReq.end();
+
+    if (attempts > 60) {
+      clearInterval(timer);
+    }
+  }, 2000);
+}
+
+initAutoRevivePoller();
+
+// Transparent HTTP reverse proxy to Evolution API with auto-retry and offline auto-revive
 function proxyHttpRequest(req, res) {
   const clientIp = req.socket.remoteAddress || '';
   const forwardedFor = req.headers['x-forwarded-for']
@@ -315,12 +439,22 @@ function proxyHttpRequest(req, res) {
     headers['x-forwarded-host'] = headers['host'];
   }
 
+  const isMessageDispatch = req.method === 'POST' && req.url.startsWith('/message/');
   const isMediaDispatch = req.method === 'POST' && (
     req.url.includes('/message/sendMedia') ||
     req.url.includes('/message/sendWhatsAppAudio')
   );
 
-  const forward = (bodyBuffer) => {
+  // Extract instance name from /message/*/:instance
+  let targetInstance = null;
+  if (isMessageDispatch) {
+    const parts = req.url.split('?')[0].split('/');
+    if (parts.length >= 4) {
+      targetInstance = parts[3];
+    }
+  }
+
+  const executeForward = (bodyBuffer, retryCount = 0) => {
     if (bodyBuffer) {
       headers['content-length'] = Buffer.byteLength(bodyBuffer);
     }
@@ -334,6 +468,34 @@ function proxyHttpRequest(req, res) {
     };
 
     const proxyReq = http.request(options, (proxyRes) => {
+      // If message dispatch failed because instance is offline/not connected, auto-revive & retry once!
+      if (isMessageDispatch && retryCount === 0 && proxyRes.statusCode >= 400 && targetInstance) {
+        let respChunks = [];
+        proxyRes.on('data', c => respChunks.push(c));
+        proxyRes.on('end', () => {
+          const respStr = Buffer.concat(respChunks).toString('utf8');
+          const isOffline = respStr.includes('does not exist') ||
+                            respStr.includes('closed') ||
+                            respStr.includes('not connected') ||
+                            respStr.includes('connection') ||
+                            respStr.includes('Timed Out') ||
+                            proxyRes.statusCode === 404;
+
+          if (isOffline) {
+            console.log(`[Gateway Auto-Revive] Message dispatch returned ${proxyRes.statusCode} (${respStr.substring(0, 100)}). Reviving instance "${targetInstance}" and retrying...`);
+            ensureInstanceOnline(targetInstance, () => {
+              executeForward(bodyBuffer, 1);
+            });
+            return;
+          }
+
+          // Otherwise return original response
+          res.writeHead(proxyRes.statusCode, proxyRes.statusMessage, proxyRes.headers);
+          res.end(Buffer.concat(respChunks));
+        });
+        return;
+      }
+
       proxyRes.on('error', (err) => {
         if (!res.destroyed) {
           res.destroy(err);
@@ -387,13 +549,14 @@ function proxyHttpRequest(req, res) {
     }
   };
 
-  if (isMediaDispatch && (headers['content-type'] || '').includes('application/json')) {
+  // Buffer and clean body for message dispatches
+  if (isMessageDispatch && (headers['content-type'] || '').includes('application/json')) {
     const chunks = [];
     req.on('data', chunk => chunks.push(chunk));
     req.on('end', () => {
       const rawBody = Buffer.concat(chunks).toString('utf8');
-      const cleaned = cleanMediaPayload(rawBody);
-      forward(Buffer.from(cleaned, 'utf8'));
+      const cleaned = isMediaDispatch ? cleanMediaPayload(rawBody) : rawBody;
+      executeForward(Buffer.from(cleaned, 'utf8'), 0);
     });
     req.on('error', err => {
       if (!res.headersSent) {
@@ -402,7 +565,7 @@ function proxyHttpRequest(req, res) {
       }
     });
   } else {
-    forward(null);
+    executeForward(null, 0);
   }
 }
 

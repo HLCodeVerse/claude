@@ -43,43 +43,23 @@ chmod 775 /run/postgresql
 export CACHE_REDIS_ENABLED="${CACHE_REDIS_ENABLED:-false}"
 export CACHE_LOCAL_ENABLED=true
 
-# 6. Database Configuration (Embedded PostgreSQL or External DB)
+# 6. Database Configuration (Supabase PostgreSQL / Embedded DB Fallback)
+SUPABASE_URI="postgresql://postgres.zrwqcigybfqelbtenenv:Chandan%409777767188@aws-1-ap-south-1.pooler.supabase.com:5432/postgres?schema=public&sslmode=require"
+
 if [ -z "$DATABASE_CONNECTION_URI" ] || [ "$DATABASE_CONNECTION_URI" = "postgresql://user:pass@localhost:5432/evolution?schema=public" ]; then
-  echo "[-] No external DATABASE_CONNECTION_URI provided."
-  echo "[-] Starting embedded PostgreSQL daemon on 127.0.0.1:5432..."
-
-  if [ ! -d "/var/lib/postgresql/data/base" ]; then
-    echo "[-] Initializing new PostgreSQL cluster in /var/lib/postgresql/data..."
-    su-exec postgres initdb -D /var/lib/postgresql/data -E UTF8 --locale=C
-    echo "listen_addresses = '127.0.0.1'" >> /var/lib/postgresql/data/postgresql.conf
-    echo "host all all 127.0.0.1/32 trust" > /var/lib/postgresql/data/pg_hba.conf
-    echo "local all all trust" >> /var/lib/postgresql/data/pg_hba.conf
-  fi
-
-  # Start PostgreSQL daemon in the background
-  su-exec postgres pg_ctl -D /var/lib/postgresql/data -o "-p 5432 -h 127.0.0.1" -w start
-
-  # Provision user and database
-  su-exec postgres psql -p 5432 -U postgres -c "CREATE USER evolution WITH PASSWORD 'evolution_password_secure';" || true
-  su-exec postgres psql -p 5432 -U postgres -c "CREATE DATABASE evolution OWNER evolution;" || true
-  su-exec postgres psql -p 5432 -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE evolution TO evolution;" || true
-
-  export DATABASE_ENABLED=true
-  export DATABASE_PROVIDER=postgresql
-  export DATABASE_CONNECTION_URI="postgresql://evolution:evolution_password_secure@127.0.0.1:5432/evolution?schema=public"
-  echo "[-] Embedded PostgreSQL initialized and ready at: $DATABASE_CONNECTION_URI"
-else
-  echo "[-] Using external DATABASE_CONNECTION_URI: $DATABASE_CONNECTION_URI"
-  export DATABASE_ENABLED=true
-  export DATABASE_PROVIDER=postgresql
+  export DATABASE_CONNECTION_URI="$SUPABASE_URI"
+  echo "[-] Auto-configured Supabase PostgreSQL for persistent WhatsApp sessions."
 fi
 
-# Mediator optimization: minimal database overhead for pure messaging proxy
+export DATABASE_ENABLED=true
+export DATABASE_PROVIDER=postgresql
+
+# Full persistence for chats, contacts, instances, and messages so MCP & AI apps can access all data
 export DATABASE_SAVE_DATA_INSTANCE=true
-export DATABASE_SAVE_DATA_NEW_MESSAGE="${DATABASE_SAVE_DATA_NEW_MESSAGE:-false}"
-export DATABASE_SAVE_MESSAGE_UPDATE="${DATABASE_SAVE_MESSAGE_UPDATE:-false}"
-export DATABASE_SAVE_DATA_CONTACTS="${DATABASE_SAVE_DATA_CONTACTS:-false}"
-export DATABASE_SAVE_DATA_CHATS="${DATABASE_SAVE_DATA_CHATS:-false}"
+export DATABASE_SAVE_DATA_NEW_MESSAGE=true
+export DATABASE_SAVE_MESSAGE_UPDATE=true
+export DATABASE_SAVE_DATA_CONTACTS=true
+export DATABASE_SAVE_DATA_CHATS=true
 export DATABASE_SAVE_DATA_HISTORIC=false
 export DATABASE_SAVE_DATA_LABELS=false
 
