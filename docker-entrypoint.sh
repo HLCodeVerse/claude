@@ -56,6 +56,8 @@ export DATABASE_PROVIDER=postgresql
 
 # Full persistence for chats, contacts, instances, and messages so MCP & AI apps can access all data
 export DATABASE_SAVE_DATA_INSTANCE=true
+export DEL_INSTANCE=false
+export DATABASE_CONNECTION_CLIENT_NAME="evolution"
 export DATABASE_SAVE_DATA_NEW_MESSAGE=true
 export DATABASE_SAVE_MESSAGE_UPDATE=true
 export DATABASE_SAVE_DATA_CONTACTS=true
