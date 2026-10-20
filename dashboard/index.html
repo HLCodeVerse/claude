@@ -206,6 +206,14 @@
         <i class="fa-solid fa-network-wired"></i>
         <span>Webhooks & Auto-reply</span>
       </button>
+      <button onclick="switchTab('apidocs')" id="tab-apidocs" class="tab-btn px-4 py-2.5 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+        <i class="fa-solid fa-book"></i>
+        <span>📖 API Docs</span>
+      </button>
+      <button onclick="switchTab('antiban')" id="tab-antiban" class="tab-btn px-4 py-2.5 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+        <i class="fa-solid fa-shield-halved text-amber-500"></i>
+        <span>🛡️ Anti-Ban Guide</span>
+      </button>
       <button onclick="switchTab('playground')" id="tab-playground" class="tab-btn px-4 py-2.5 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
         <i class="fa-solid fa-code"></i>
         <span>Code Generator</span>
@@ -719,6 +727,146 @@
         </div>
       </div>
     </div>
+
+    <!-- ======================================================================= -->
+    <!-- TAB 5: API DOCUMENTATION FOR EXTERNAL APPS -->
+    <!-- ======================================================================= -->
+    <div id="content-apidocs" class="hidden space-y-6">
+      <div class="bg-white dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-6">
+        <div>
+          <h2 class="text-lg font-bold flex items-center gap-2">
+            <i class="fa-solid fa-book text-emerald-500"></i>
+            Mediator API Integration Guide
+          </h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Connect your backend apps, bots, websites, and CRMs to send and receive WhatsApp messages through this instance.
+          </p>
+        </div>
+
+        <!-- Credentials Card -->
+        <div class="p-4 rounded-xl bg-slate-900 text-white space-y-3 font-mono text-xs border border-slate-700">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-2">
+            <span class="text-slate-400">BASE URL:</span>
+            <span class="text-emerald-400 font-bold select-all" id="docBaseUrl">https://claude-kv0j.onrender.com</span>
+          </div>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <span class="text-slate-400">REQUIRED HEADER:</span>
+            <span class="text-amber-400 font-bold select-all">apikey: <span id="docApiKey">evol_whatsapp_api_secret_key_2026</span></span>
+          </div>
+        </div>
+
+        <!-- Endpoints List -->
+        <div class="space-y-4">
+          <h3 class="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">Essential Endpoints</h3>
+
+          <!-- Send Text -->
+          <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 space-y-2">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded bg-emerald-600 text-white font-mono text-xs font-bold">POST</span>
+              <code class="text-xs font-bold font-mono">/message/sendText/:instanceName</code>
+            </div>
+            <p class="text-xs text-slate-600 dark:text-slate-400">Sends a text message to any phone number (e.g. <code>15551234567</code>).</p>
+            <pre class="p-3 rounded-lg bg-slate-950 text-emerald-300 font-mono text-[11px] overflow-x-auto select-all">{
+  "number": "15551234567",
+  "text": "Hello from my app! 🚀"
+}</pre>
+          </div>
+
+          <!-- Send Media -->
+          <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 space-y-2">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded bg-emerald-600 text-white font-mono text-xs font-bold">POST</span>
+              <code class="text-xs font-bold font-mono">/message/sendMedia/:instanceName</code>
+            </div>
+            <p class="text-xs text-slate-600 dark:text-slate-400">Sends an image, video, or PDF document attachment.</p>
+            <pre class="p-3 rounded-lg bg-slate-950 text-emerald-300 font-mono text-[11px] overflow-x-auto select-all">{
+  "number": "15551234567",
+  "mediatype": "image",
+  "media": "https://example.com/photo.png",
+  "caption": "Monthly statement"
+}</pre>
+          </div>
+
+          <!-- Check State -->
+          <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 space-y-2">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded bg-blue-600 text-white font-mono text-xs font-bold">GET</span>
+              <code class="text-xs font-bold font-mono">/instance/connectionState/:instanceName</code>
+            </div>
+            <p class="text-xs text-slate-600 dark:text-slate-400">Verifies whether WhatsApp is connected (<code>"state": "open"</code>).</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- TAB 6: ANTI-BAN & BULK MESSAGING SAFETY GUIDE -->
+    <!-- ======================================================================= -->
+    <div id="content-antiban" class="hidden space-y-6">
+      <div class="bg-white dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-6">
+        <div class="flex items-start gap-4">
+          <div class="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 flex items-center justify-center text-2xl shrink-0">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold">WhatsApp Anti-Ban & Bulk Messaging Guide</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Will WhatsApp suspend my account if I send bulk messages? <strong>YES, if done improperly.</strong> Here is how to keep your phone number 100% safe.
+            </p>
+          </div>
+        </div>
+
+        <!-- Alert Banner -->
+        <div class="p-4 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-300 text-xs space-y-1">
+          <h4 class="font-bold flex items-center gap-1.5 text-sm">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            The #1 Cause of WhatsApp Bans: User "Report & Block"
+          </h4>
+          <p>
+            When recipients receive a message from an unsaved number, WhatsApp shows a prominent <strong>"Report & Block"</strong> button. If just 3 to 5 users report your message within a few hours, WhatsApp's automated AI will immediately ban your number.
+          </p>
+        </div>
+
+        <!-- Golden Rules Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-2">
+            <h4 class="font-bold text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+              <i class="fa-solid fa-stopwatch"></i> 1. Random Delays (5–15 Seconds)
+            </h4>
+            <p class="text-xs text-slate-600 dark:text-slate-400">
+              Never send 50 messages in the same second. In your sending loop, add a random wait of <strong>5 to 15 seconds</strong> between each contact.
+            </p>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-2">
+            <h4 class="font-bold text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+              <i class="fa-solid fa-fire"></i> 2. Number Warm-Up Schedule
+            </h4>
+            <p class="text-xs text-slate-600 dark:text-slate-400">
+              Days 1–3: Max 20 msgs/day. Days 4–7: Max 50 msgs/day. Week 2+: Gradually scale up to 150–300 msgs/day.
+            </p>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-2">
+            <h4 class="font-bold text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+              <i class="fa-solid fa-shuffle"></i> 3. Text Spintax & Personalization
+            </h4>
+            <p class="text-xs text-slate-600 dark:text-slate-400">
+              Never send identical text to 500 people. Vary greetings (<code>Hi {name}</code>, <code>Hello {name}</code>) and personalize content.
+            </p>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-2">
+            <h4 class="font-bold text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+              <i class="fa-solid fa-hand"></i> 4. Easy Opt-Out Notice
+            </h4>
+            <p class="text-xs text-slate-600 dark:text-slate-400">
+              Always end with <em>"Reply STOP to unsubscribe"</em>. Users who type STOP won't report your number to WhatsApp!
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
   </main>
 
   <!-- ======================================================================= -->
@@ -905,6 +1053,7 @@
     };
 
     let activeInstances = [];
+    let instanceAliases = JSON.parse(localStorage.getItem('evo_instance_aliases') || '{}');
     let currentPollingInstance = null;
     let pollInterval = null;
     let activeMsgType = 'text';
@@ -1489,11 +1638,28 @@
 
       const options = activeInstances.map(inst => {
         const name = inst.name || inst.instanceName || inst.instance?.instanceName;
-        return `<option value="${name}">${name} (${inst.connectionStatus || inst.instance?.status || 'active'})</option>`;
+        const alias = instanceAliases[name];
+        const label = alias ? `${alias} (${name})` : name;
+        return `<option value="${name}">${label} (${inst.connectionStatus || inst.instance?.status || 'active'})</option>`;
       }).join('');
 
       sendSelect.innerHTML = `<option value="">-- Choose an Instance --</option>` + options;
       webhookSelect.innerHTML = `<option value="">-- Choose an Instance --</option>` + options;
+    }
+
+    function editInstanceName(name) {
+      const current = instanceAliases[name] || name;
+      const newName = prompt(`Enter friendly display name / alias for instance "${name}" (e.g. Sales Phone, Support Desk, Notification Bot):`, current);
+      if (newName === null) return;
+      const trimmed = newName.trim();
+      if (!trimmed || trimmed === name) {
+        delete instanceAliases[name];
+      } else {
+        instanceAliases[name] = trimmed;
+      }
+      localStorage.setItem('evo_instance_aliases', JSON.stringify(instanceAliases));
+      renderInstanceCards();
+      populateInstanceDropdowns();
     }
 
     function renderInstanceCards() {
@@ -1518,6 +1684,8 @@
         const status = (item.connectionStatus || item.instance?.status || 'close').toLowerCase();
         const phone = item.ownerJid || item.number || 'Not paired yet';
         const isConnected = status === 'open';
+        const alias = instanceAliases[name] || '';
+        const displayName = alias || name;
 
         return `
           <div class="bg-white dark:bg-slate-800/90 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition space-y-4 flex flex-col justify-between">
@@ -1528,7 +1696,13 @@
                     <i class="fa-brands fa-whatsapp"></i>
                   </div>
                   <div>
-                    <h3 class="font-bold text-sm leading-tight">${name}</h3>
+                    <div class="flex items-center gap-1.5">
+                      <h3 class="font-bold text-sm leading-tight text-slate-900 dark:text-slate-100">${displayName}</h3>
+                      <button onclick="editInstanceName('${name}')" title="Edit Display Name / Set Alias" class="p-1 rounded text-slate-400 hover:text-emerald-500 hover:bg-slate-100 dark:hover:bg-slate-700 transition text-[11px]">
+                        <i class="fa-solid fa-pen"></i>
+                      </button>
+                    </div>
+                    ${alias ? `<p class="text-[10px] text-slate-400 font-mono">API ID: <strong>${name}</strong></p>` : ''}
                     <p class="text-[11px] font-mono text-slate-400">${phone.replace('@s.whatsapp.net', '')}</p>
                   </div>
                 </div>
@@ -1549,6 +1723,9 @@
                   <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> Disconnect
                 </button>
               `}
+              <button onclick="editInstanceName('${name}')" title="Rename / Set Alias" class="p-2 rounded-lg text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition text-xs">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
               <button onclick="deleteInstance('${name}')" title="Delete Instance" class="p-2 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition">
                 <i class="fa-solid fa-trash-can"></i>
               </button>
@@ -1993,7 +2170,7 @@ sendWhatsApp();`;
     // 10. TAB NAVIGATION
     // -------------------------------------------------------------------------
     function switchTab(tabId) {
-      ['testsuite', 'instances', 'send', 'webhooks', 'playground'].forEach(t => {
+      ['testsuite', 'instances', 'send', 'webhooks', 'apidocs', 'antiban', 'playground'].forEach(t => {
         const content = document.getElementById(`content-${t}`);
         const btn = document.getElementById(`tab-${t}`);
         if (content) content.classList.toggle('hidden', t !== tabId);
