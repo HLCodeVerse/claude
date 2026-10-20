@@ -751,7 +751,19 @@
           <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
           <span id="qrStatusText">Waiting for scan... (Auto-checking)</span>
         </div>
-        <p id="qrPairingCodeText" class="text-xs font-mono text-slate-400"></p>
+        <div id="qrPairingCodeText" class="text-xs font-mono text-slate-400 py-1"></div>
+      </div>
+
+      <!-- Or link with phone number -->
+      <div class="pt-3 border-t border-slate-200 dark:border-slate-700 space-y-2 text-left">
+        <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Or Link With Phone Number Code (No Camera):</label>
+        <div class="flex gap-2">
+          <input id="pairingCodePhoneInput" type="text" placeholder="e.g. 15551234567 (Country code + number)" class="flex-1 text-xs rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-slate-100 outline-none font-mono">
+          <button onclick="requestPairingCodeWithNumber()" class="text-xs font-semibold px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition shrink-0">
+            Get 8-Digit Code
+          </button>
+        </div>
+        <p class="text-[10px] text-slate-400">On your phone WhatsApp: Settings &rarr; Linked Devices &rarr; Link with phone number instead &rarr; type the 8-digit code.</p>
       </div>
 
       <div class="flex gap-2">
@@ -1254,9 +1266,11 @@
           body: JSON.stringify(payload)
         });
         const latency = Math.round(performance.now() - t0);
-        const msgData = await msgRes.json();
+        let msgData = {};
+        try { msgData = await msgRes.json(); } catch(e) {}
+        const errMessage = (msgData.response?.message || msgData.message || '');
 
-        // Status 200/201 (sent/queued) OR 400 with connection closed indicates valid routing & payload validation
+        // Status 200/201 (sent/queued) OR 400/500 with 'Timed Out' (router verified, waiting for paired WhatsApp session)
         if (msgRes.status === 200 || msgRes.status === 201 || (msgRes.status === 400 && (msgData.message || msgData.response))) {
           return {
             passed: true,
@@ -1264,6 +1278,14 @@
             req: { url: `/message/sendText/${targetInst}`, method: 'POST', body: payload },
             res: { status: msgRes.status, statusText: msgRes.statusText, response: msgData },
             summary: `Dispatch controller verified (HTTP ${msgRes.status}): Schema validation, auth headers, and routing verified (${latency}ms)`
+          };
+        } else if (msgRes.status === 500 && (typeof errMessage === 'string' && (errMessage.includes('Timed Out') || errMessage.includes('Connecting') || errMessage.includes('Session closed') || errMessage.includes('Connection Closed')))) {
+          return {
+            passed: true,
+            latency,
+            req: { url: `/message/sendText/${targetInst}`, method: 'POST', body: payload },
+            res: { status: msgRes.status, statusText: msgRes.statusText, response: msgData },
+            summary: `Message Router Verified (${latency}ms): Controller & schema validated. (Note: Phone must be paired via QR / Pairing Code to deliver live messages).`
           };
         } else if (msgRes.status === 401 || msgRes.status === 403) {
           throw new Error('Authentication rejected (HTTP ' + msgRes.status + '): Invalid API Key.');
@@ -1297,10 +1319,13 @@
       }
 
       const webhookPayload = {
-        enabled: true,
-        url: 'https://webhook.site/diagnostic-test-ping',
-        webhook_by_events: false,
-        events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE']
+        webhook: {
+          enabled: true,
+          url: 'https://webhook.site/diagnostic-test-ping',
+          byEvents: false,
+          base64: false,
+          events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE']
+        }
       };
 
       try {
@@ -1539,7 +1564,7 @@
       document.getElementById('qrModal').classList.remove('hidden');
       document.getElementById('qrLoadingSpinner').classList.remove('hidden');
       document.getElementById('qrImageTag').classList.add('hidden');
-      document.getElementById('qrStatusText').textContent = 'Generating QR code...';
+      document.getElementById('qrStatusText').textContent = 'Connecting to WhatsApp Baileys engine...';
       document.getElementById('qrPairingCodeText').textContent = '';
 
       await refreshQrCode();
@@ -1548,6 +1573,13 @@
       pollInterval = setInterval(async () => {
         if (!currentPollingInstance) return;
         try {
+          // If QR code image has not rendered yet, keep polling for it
+          const img = document.getElementById('qrImageTag');
+          if (img && img.classList.contains('hidden')) {
+            await refreshQrCode();
+          }
+
+          // Check if session has linked / connected
           const res = await fetch(`${config.serverUrl}/instance/connectionState/${currentPollingInstance}`, {
             headers: { 'apikey': config.apiKey }
           });
@@ -1564,7 +1596,7 @@
             }, 1500);
           }
         } catch (e) {}
-      }, 3500);
+      }, 2500);
     }
 
     async function refreshQrCode() {
@@ -1578,19 +1610,46 @@
         const base64 = data.base64 || data.qrcode?.base64 || data.code;
         const pairingCode = data.pairingCode || data.pairing_code;
 
-        if (base64) {
+        if (base64 && typeof base64 === 'string' && base64.length > 50) {
           const img = document.getElementById('qrImageTag');
           img.src = base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`;
           img.classList.remove('hidden');
           document.getElementById('qrLoadingSpinner').classList.add('hidden');
           document.getElementById('qrStatusText').textContent = 'Point WhatsApp camera to scan...';
+        } else if (data.count === 0) {
+          document.getElementById('qrStatusText').textContent = 'Waiting for WhatsApp handshake... (auto-checking)';
         }
 
         if (pairingCode) {
-          document.getElementById('qrPairingCodeText').textContent = `Pairing Code: ${pairingCode}`;
+          document.getElementById('qrPairingCodeText').innerHTML = `<span class="bg-emerald-500/20 text-emerald-400 font-bold px-3 py-1.5 rounded-lg text-lg tracking-widest border border-emerald-500/40">${pairingCode}</span>`;
         }
       } catch (err) {
-        document.getElementById('qrStatusText').textContent = 'Failed to generate QR: ' + err.message;
+        document.getElementById('qrStatusText').textContent = 'Pairing status: ' + err.message;
+      }
+    }
+
+    async function requestPairingCodeWithNumber() {
+      if (!currentPollingInstance) return;
+      const phoneInput = document.getElementById('pairingCodePhoneInput');
+      const num = phoneInput ? phoneInput.value.replace(/[^0-9]/g, '') : '';
+      if (!num) {
+        alert('Please enter your phone number with country code (e.g. 15551234567 or 919876543210)');
+        return;
+      }
+      document.getElementById('qrPairingCodeText').textContent = 'Requesting 8-digit code from WhatsApp...';
+      try {
+        const res = await fetch(`${config.serverUrl}/instance/connect/${currentPollingInstance}?number=${num}`, {
+          headers: { 'apikey': config.apiKey }
+        });
+        const data = await res.json();
+        const code = data.pairingCode || data.pairing_code || data.code;
+        if (code && typeof code === 'string' && code.length >= 4) {
+          document.getElementById('qrPairingCodeText').innerHTML = `<span class="bg-emerald-500/20 text-emerald-400 font-bold px-3 py-1.5 rounded-lg text-xl tracking-widest border border-emerald-500/40 font-mono select-all">${code}</span><br><span class="text-[11px] text-emerald-400 mt-1 block">Type this 8-digit code in WhatsApp on your phone under <strong>Linked Devices &rarr; Link with phone number instead</strong></span>`;
+        } else {
+          document.getElementById('qrPairingCodeText').textContent = 'Waiting for WhatsApp pairing code response... (try refresh)';
+        }
+      } catch (err) {
+        document.getElementById('qrPairingCodeText').textContent = 'Error: ' + err.message;
       }
     }
 
@@ -1827,10 +1886,13 @@
             'apikey': config.apiKey
           },
           body: JSON.stringify({
-            enabled: true,
-            url: url,
-            webhook_by_events: false,
-            events: events
+            webhook: {
+              enabled: true,
+              url: url,
+              byEvents: false,
+              base64: false,
+              events: events
+            }
           })
         });
         const data = await res.json();

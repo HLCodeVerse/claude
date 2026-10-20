@@ -170,7 +170,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"enabled\": true,\n  \"url\": \"https://webhook.site/replace-with-your-url\",\n  \"webhook_by_events\": false,\n  \"events\": [\n    \"MESSAGES_UPSERT\",\n    \"CONNECTION_UPDATE\",\n    \"SEND_MESSAGE\",\n    \"QRCODE_UPDATED\"\n  ]\n}"
+          "raw": "{\n  \"webhook\": {\n    \"enabled\": true,\n    \"url\": \"https://webhook.site/replace-with-your-url\",\n    \"byEvents\": false,\n    \"base64\": false,\n    \"events\": [\n      \"MESSAGES_UPSERT\",\n      \"CONNECTION_UPDATE\",\n      \"SEND_MESSAGE\",\n      \"QRCODE_UPDATED\"\n    ]\n  }\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/webhook/set/{{instance}}",

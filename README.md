@@ -199,13 +199,15 @@ To receive incoming WhatsApp messages and reply automatically:
      -H "apikey: your_secret_api_key" \
      -H "Content-Type: application/json" \
      -d '{
-       "enabled": true,
-       "url": "https://your-bot-server.com/webhook",
-       "webhook_by_events": false,
-       "events": [
-         "MESSAGES_UPSERT",
-         "CONNECTION_UPDATE"
-       ]
+       "webhook": {
+         "enabled": true,
+         "url": "https://your-bot-server.com/webhook",
+         "byEvents": false,
+         "events": [
+           "MESSAGES_UPSERT",
+           "CONNECTION_UPDATE"
+         ]
+       }
      }'
    ```
 2. Run the included auto-reply bot example:

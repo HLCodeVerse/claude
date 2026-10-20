@@ -80,6 +80,40 @@ export DATABASE_SAVE_DATA_NEW_MESSAGE="${DATABASE_SAVE_DATA_NEW_MESSAGE:-false}"
 export DATABASE_SAVE_MESSAGE_UPDATE="${DATABASE_SAVE_MESSAGE_UPDATE:-false}"
 export DATABASE_SAVE_DATA_CONTACTS="${DATABASE_SAVE_DATA_CONTACTS:-false}"
 export DATABASE_SAVE_DATA_CHATS="${DATABASE_SAVE_DATA_CHATS:-false}"
+export DATABASE_SAVE_DATA_HISTORIC=false
+export DATABASE_SAVE_DATA_LABELS=false
+
+# 7. WhatsApp Web Protocol & Baileys Settings (Prevents count: 0 and connection drops)
+if [ -z "$CONFIG_SESSION_PHONE_VERSION" ]; then
+  LATEST_WA_VER=$(node -e "
+    const https = require('https');
+    const req = https.get('https://raw.githubusercontent.com/WhiskeySockets/Baileys/master/src/Defaults/baileys-version.json', { timeout: 3000 }, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const v = JSON.parse(data).version;
+          console.log(v.join('.'));
+        } catch(e) {}
+      });
+    });
+    req.on('error', () => {});
+    req.on('timeout', () => req.destroy());
+  " 2>/dev/null || true)
+
+  if [ -n "$LATEST_WA_VER" ]; then
+    export CONFIG_SESSION_PHONE_VERSION="$LATEST_WA_VER"
+    export WEB_VERSION="$LATEST_WA_VER"
+    echo "[-] Auto-detected latest WhatsApp Web version: $CONFIG_SESSION_PHONE_VERSION"
+  else
+    export CONFIG_SESSION_PHONE_VERSION="2.3000.1043857760"
+    export WEB_VERSION="2.3000.1043857760"
+    echo "[-] Using fallback WhatsApp Web version: $CONFIG_SESSION_PHONE_VERSION"
+  fi
+fi
+
+export CONFIG_SESSION_PHONE_CLIENT="Chrome"
+export CONFIG_SESSION_PHONE_NAME="Chrome"
 
 # 7. Apply Database Migrations (Prisma)
 echo "[-] Applying Evolution API Prisma database migrations..."
