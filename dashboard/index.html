@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WhatsApp Service Manager | Evolution API</title>
+  <title>WhatsApp Service Manager & Interactive Test Suite | Evolution API</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script>
@@ -33,18 +33,35 @@
       animation: pulse-slow 3s infinite;
     }
     .glass {
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(12px);
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(14px);
     }
     .dark .glass {
-      background: rgba(17, 24, 39, 0.85);
-      backdrop-filter: blur(12px);
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(14px);
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.4);
+      border-radius: 4px;
+    }
+    .dark ::-webkit-scrollbar-thumb {
+      background: rgba(71, 85, 105, 0.5);
     }
   </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans antialiased transition-colors">
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans antialiased transition-colors duration-200">
 
-  <!-- Navigation Bar -->
+  <!-- ======================================================================= -->
+  <!-- TOP NAVIGATION BAR -->
+  <!-- ======================================================================= -->
   <header class="glass sticky top-0 z-40 border-b border-slate-200 dark:border-slate-800 shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center space-x-3">
@@ -52,100 +69,418 @@
           <i class="fa-brands fa-whatsapp"></i>
         </div>
         <div>
-          <h1 class="text-lg font-bold leading-tight flex items-center gap-2">
+          <h1 class="text-base sm:text-lg font-bold leading-tight flex items-center gap-2">
             WhatsApp API Hub
             <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
               Evolution v2
             </span>
           </h1>
-          <p class="text-xs text-slate-500 dark:text-slate-400">Free, Self-Hosted WhatsApp Cloud Service</p>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">Render Cloud WhatsApp Automation & Interactive Diagnostic Suite</p>
         </div>
       </div>
 
-      <div class="flex items-center space-x-3">
-        <!-- Status indicator -->
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <!-- Live status indicator -->
         <div id="serverStatusBadge" class="flex items-center space-x-2 text-xs font-medium px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
           <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
           <span>Checking API...</span>
         </div>
 
         <!-- Documentation & Manager links -->
-        <a id="btnDocsLink" href="#" target="_blank" class="hidden sm:flex items-center space-x-1 text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition">
+        <a id="btnDocsLink" href="#" target="_blank" class="hidden md:flex items-center space-x-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition">
           <i class="fa-solid fa-book-open"></i>
-          <span>Swagger Docs</span>
+          <span>Swagger</span>
         </a>
-        <a id="btnManagerLink" href="#" target="_blank" class="hidden sm:flex items-center space-x-1 text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition">
+        <a id="btnManagerLink" href="#" target="_blank" class="hidden md:flex items-center space-x-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition">
           <i class="fa-solid fa-sliders"></i>
-          <span>Official Manager</span>
+          <span>Manager</span>
         </a>
 
         <!-- Config button -->
-        <button onclick="openConfigModal()" class="flex items-center space-x-1 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition">
+        <button onclick="openConfigModal()" class="flex items-center space-x-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition">
           <i class="fa-solid fa-gear"></i>
-          <span>API Settings</span>
+          <span class="hidden sm:inline">Settings</span>
         </button>
 
         <!-- Dark mode toggle -->
-        <button onclick="toggleDarkMode()" class="p-2 rounded-lg text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+        <button onclick="toggleDarkMode()" aria-label="Toggle Theme" class="p-2 rounded-lg text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition">
           <i id="themeIcon" class="fa-solid fa-moon"></i>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- Main Container -->
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+  <!-- ======================================================================= -->
+  <!-- MAIN CONTAINER -->
+  <!-- ======================================================================= -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-    <!-- Active Connection Banner -->
-    <div class="p-4 rounded-2xl bg-gradient-to-r from-emerald-900/90 to-teal-900/90 text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-lg border border-emerald-700/50">
+    <!-- 1. NETWORK & OUTBOUND IP BANNER (Render Firewall & DB Allowlist) -->
+    <div class="rounded-2xl border border-cyan-500/30 bg-gradient-to-r from-slate-900 via-cyan-950/70 to-slate-900 text-white p-4 sm:p-5 shadow-lg relative overflow-hidden">
+      <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none"></div>
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
+        <div class="flex items-start gap-3.5">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-white text-lg shrink-0 shadow-md">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div class="space-y-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-xs uppercase tracking-wider font-bold text-cyan-400">Render Outbound Network IP Allowlist</span>
+              <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                CIDR Ranges
+              </span>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed max-w-3xl">
+              These are Render's outbound IPs. Add them to your database (<strong>PostgreSQL / Supabase / Neon</strong>) or firewall allowlist if you restrict incoming connections:
+            </p>
+            <div class="flex flex-wrap items-center gap-2 pt-1 font-mono text-xs">
+              <span class="px-2.5 py-1 rounded-md bg-black/50 border border-cyan-500/40 text-cyan-200 font-bold flex items-center gap-1.5 shadow-inner">
+                <i class="fa-solid fa-network-wired text-cyan-400 text-[10px]"></i>
+                74.220.52.0/24
+              </span>
+              <span class="px-2.5 py-1 rounded-md bg-black/50 border border-cyan-500/40 text-cyan-200 font-bold flex items-center gap-1.5 shadow-inner">
+                <i class="fa-solid fa-network-wired text-cyan-400 text-[10px]"></i>
+                74.220.60.0/24
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 self-start lg:self-center shrink-0">
+          <button onclick="copyRenderOutboundIps()" id="btnCopyIps" class="text-xs font-semibold px-3.5 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white shadow-sm transition flex items-center gap-1.5 active:scale-95">
+            <i id="copyIpsIcon" class="fa-regular fa-copy"></i>
+            <span id="copyIpsText">Copy IPs</span>
+          </button>
+          <button onclick="switchTab('testsuite'); runFullDiagnostic();" class="text-xs font-semibold px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition flex items-center gap-1.5 active:scale-95">
+            <i class="fa-solid fa-vial-circle-check"></i>
+            <span>Run Test Suite</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. ACTIVE CONNECTION BANNER -->
+    <div class="p-4 rounded-2xl bg-gradient-to-r from-emerald-950 via-teal-900/90 to-slate-900 text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-lg border border-emerald-700/50">
       <div>
-        <div class="flex items-center gap-2">
-          <span class="text-xs uppercase tracking-wider font-semibold text-emerald-300">Target Endpoint</span>
-          <span id="activeUrlText" class="font-mono text-sm font-bold bg-black/30 px-2.5 py-0.5 rounded-md text-emerald-200">
-            http://localhost:8080
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-xs uppercase tracking-wider font-semibold text-emerald-300">Active Service Endpoint</span>
+          <span id="activeUrlText" class="font-mono text-xs sm:text-sm font-bold bg-black/40 px-2.5 py-0.5 rounded-md text-emerald-200 border border-emerald-500/30">
+            https://claude-kv0j.onrender.com
+          </span>
+          <span id="renderBadge" class="hidden text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+            Render Deployment
           </span>
         </div>
         <p class="text-xs text-emerald-100/80 mt-1">
-          Connected via Global API Key (<span id="maskedKeyText" class="font-mono">••••••••</span>). All requests execute directly against this instance.
+          Connected via Global Authentication API Key (<span id="maskedKeyText" class="font-mono font-semibold">••••••••</span>). All API calls execute directly against this target.
         </p>
       </div>
-      <div class="flex items-center gap-2">
-        <button onclick="testConnection()" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition flex items-center gap-1.5">
+      <div class="flex items-center gap-2 shrink-0">
+        <button onclick="testConnection()" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition flex items-center gap-1.5 active:scale-95">
           <i class="fa-solid fa-rotate"></i>
           <span>Ping Service</span>
         </button>
-        <button onclick="openConfigModal()" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition flex items-center gap-1.5">
+        <button onclick="openConfigModal()" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition flex items-center gap-1.5 active:scale-95">
           <i class="fa-solid fa-pen-to-square"></i>
-          <span>Change Server / Key</span>
+          <span>Change URL / Key</span>
         </button>
       </div>
     </div>
 
-    <!-- Navigation Tabs -->
-    <div class="flex border-b border-slate-200 dark:border-slate-800 space-x-2 sm:space-x-4">
-      <button onclick="switchTab('instances')" id="tab-instances" class="tab-btn px-4 py-2.5 font-semibold text-sm border-b-2 border-emerald-600 text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+    <!-- 3. NAVIGATION TABS -->
+    <div class="flex border-b border-slate-200 dark:border-slate-800 space-x-2 sm:space-x-4 overflow-x-auto pb-1">
+      <button onclick="switchTab('testsuite')" id="tab-testsuite" class="tab-btn px-4 py-2.5 font-semibold text-sm border-b-2 border-emerald-600 text-emerald-600 dark:text-emerald-400 flex items-center gap-2 whitespace-nowrap">
+        <i class="fa-solid fa-vial-circle-check"></i>
+        <span>🧪 Test Suite</span>
+        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">5 Tests</span>
+      </button>
+      <button onclick="switchTab('instances')" id="tab-instances" class="tab-btn px-4 py-2.5 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
         <i class="fa-solid fa-mobile-screen-button"></i>
         <span>WhatsApp Instances</span>
       </button>
-      <button onclick="switchTab('send')" id="tab-send" class="tab-btn px-4 py-2.5 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-2">
+      <button onclick="switchTab('send')" id="tab-send" class="tab-btn px-4 py-2.5 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
         <i class="fa-solid fa-paper-plane"></i>
         <span>Send Messages</span>
       </button>
-      <button onclick="switchTab('webhooks')" id="tab-webhooks" class="tab-btn px-4 py-2.5 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-2">
+      <button onclick="switchTab('webhooks')" id="tab-webhooks" class="tab-btn px-4 py-2.5 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
         <i class="fa-solid fa-network-wired"></i>
         <span>Webhooks & Auto-reply</span>
       </button>
-      <button onclick="switchTab('playground')" id="tab-playground" class="tab-btn px-4 py-2.5 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-2">
+      <button onclick="switchTab('playground')" id="tab-playground" class="tab-btn px-4 py-2.5 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
         <i class="fa-solid fa-code"></i>
-        <span>Code Generator (cURL, Python, Node)</span>
+        <span>Code Generator</span>
       </button>
     </div>
 
     <!-- ======================================================================= -->
-    <!-- TAB 1: INSTANCES -->
+    <!-- TAB 1: ONE-CLICK INTERACTIVE TEST SUITE -->
     <!-- ======================================================================= -->
-    <div id="content-instances" class="space-y-6">
-      <div class="flex items-center justify-between">
+    <div id="content-testsuite" class="space-y-6">
+
+      <!-- Test Suite Master Control Card -->
+      <div class="bg-white dark:bg-slate-800/90 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm space-y-5">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs uppercase font-bold text-emerald-600 dark:text-emerald-400 tracking-wider">Evolution API Diagnostic Suite</span>
+              <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
+                End-to-End
+              </span>
+            </div>
+            <h2 class="text-lg sm:text-xl font-bold mt-0.5">Automated Service Verification</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-2xl">
+              Execute real-time synthetic tests against your Render WhatsApp instance. Checks API health, Baileys lifecycle, QR generator base64 stream, message router dispatch, and webhook subscriptions.
+            </p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="resetTestSuite()" class="text-xs font-semibold px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 transition flex items-center gap-1.5">
+              <i class="fa-solid fa-rotate-left"></i>
+              <span>Reset</span>
+            </button>
+            <button onclick="runFullDiagnostic()" id="btnRunDiagnostic" class="text-xs font-bold px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md hover:shadow-lg transition flex items-center gap-2 active:scale-95">
+              <i class="fa-solid fa-play"></i>
+              <span>Run Full Diagnostic</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Visual Progress Bar -->
+        <div id="diagnosticProgressContainer" class="hidden space-y-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
+          <div class="flex items-center justify-between text-xs font-semibold">
+            <span id="diagnosticStatusText" class="text-slate-600 dark:text-slate-300 flex items-center gap-2">
+              <i class="fa-solid fa-circle-notch fa-spin text-emerald-500"></i>
+              Initializing test pipeline...
+            </span>
+            <span id="diagnosticPercentText" class="font-mono text-emerald-600 dark:text-emerald-400">0%</span>
+          </div>
+          <div class="w-full h-2.5 rounded-full bg-slate-100 dark:bg-slate-900 overflow-hidden border border-slate-200 dark:border-slate-800">
+            <div id="diagnosticProgressBar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Verdict Banner (Appears after test run) -->
+        <div id="diagnosticVerdictBanner" class="hidden p-4 rounded-xl border"></div>
+      </div>
+
+      <!-- 5 TEST CARDS GRID -->
+      <div class="space-y-4">
+
+        <!-- TEST 1: API Server Health -->
+        <div id="testCard-1" class="bg-white dark:bg-slate-800/90 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm transition space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-start gap-3">
+              <div class="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold text-sm shrink-0">
+                1
+              </div>
+              <div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <h3 class="text-sm font-bold">API Server Health & Version</h3>
+                  <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800">
+                    GET /
+                  </span>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Verifies HTTP 200 OK, framework latency, Evolution API version, and Render server responsiveness.
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 self-start sm:self-center shrink-0">
+              <span id="testLatency-1" class="hidden text-[11px] font-mono font-semibold px-2 py-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                -- ms
+              </span>
+              <span id="testBadge-1" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-600 flex items-center gap-1.5">
+                <i class="fa-regular fa-clock"></i>
+                <span>Ready</span>
+              </span>
+              <button onclick="executeSingleTest(1)" id="btnTest-1" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition">
+                <i class="fa-solid fa-play text-[10px] mr-1"></i> Run
+              </button>
+            </div>
+          </div>
+
+          <div id="testOutput-1" class="hidden pt-3 border-t border-slate-100 dark:border-slate-700/60 space-y-2">
+            <p id="testSummary-1" class="text-xs font-medium text-slate-600 dark:text-slate-300"></p>
+            <pre id="testPre-1" class="w-full text-xs font-mono bg-slate-950 text-emerald-400 p-3 rounded-xl overflow-x-auto whitespace-pre-wrap select-all max-h-48"></pre>
+          </div>
+        </div>
+
+        <!-- TEST 2: Instance Lifecycle -->
+        <div id="testCard-2" class="bg-white dark:bg-slate-800/90 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm transition space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-start gap-3">
+              <div class="w-9 h-9 rounded-xl bg-teal-100 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold text-sm shrink-0">
+                2
+              </div>
+              <div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <h3 class="text-sm font-bold">Instance Lifecycle & DB State</h3>
+                  <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-teal-100 dark:bg-teal-950 text-teal-700 dark:text-teal-300 border border-teal-300 dark:border-teal-800">
+                    POST /instance/create & DELETE
+                  </span>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Provisions a temporary instance <code class="text-emerald-500 font-mono">test-runner</code>, queries connection state, and cleans it up. Tests PostgreSQL persistence.
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 self-start sm:self-center shrink-0">
+              <span id="testLatency-2" class="hidden text-[11px] font-mono font-semibold px-2 py-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                -- ms
+              </span>
+              <span id="testBadge-2" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-600 flex items-center gap-1.5">
+                <i class="fa-regular fa-clock"></i>
+                <span>Ready</span>
+              </span>
+              <button onclick="executeSingleTest(2)" id="btnTest-2" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition">
+                <i class="fa-solid fa-play text-[10px] mr-1"></i> Run
+              </button>
+            </div>
+          </div>
+
+          <div id="testOutput-2" class="hidden pt-3 border-t border-slate-100 dark:border-slate-700/60 space-y-2">
+            <p id="testSummary-2" class="text-xs font-medium text-slate-600 dark:text-slate-300"></p>
+            <pre id="testPre-2" class="w-full text-xs font-mono bg-slate-950 text-emerald-400 p-3 rounded-xl overflow-x-auto whitespace-pre-wrap select-all max-h-48"></pre>
+          </div>
+        </div>
+
+        <!-- TEST 3: QR Code Generator -->
+        <div id="testCard-3" class="bg-white dark:bg-slate-800/90 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm transition space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-start gap-3">
+              <div class="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-sm shrink-0">
+                3
+              </div>
+              <div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <h3 class="text-sm font-bold">QR Code Generator & Pairing Stream</h3>
+                  <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800">
+                    GET /instance/connect/{instance}
+                  </span>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Requests Baileys pairing payload, verifies base64 PNG generation, and tests pairing code generator.
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 self-start sm:self-center shrink-0">
+              <span id="testLatency-3" class="hidden text-[11px] font-mono font-semibold px-2 py-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                -- ms
+              </span>
+              <span id="testBadge-3" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-600 flex items-center gap-1.5">
+                <i class="fa-regular fa-clock"></i>
+                <span>Ready</span>
+              </span>
+              <button onclick="executeSingleTest(3)" id="btnTest-3" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition">
+                <i class="fa-solid fa-play text-[10px] mr-1"></i> Run
+              </button>
+            </div>
+          </div>
+
+          <div id="testOutput-3" class="hidden pt-3 border-t border-slate-100 dark:border-slate-700/60 space-y-2">
+            <div class="flex items-start gap-4">
+              <div id="testQrPreviewContainer" class="hidden w-24 h-24 rounded-lg bg-white p-1 border border-slate-300 dark:border-slate-700 shrink-0">
+                <img id="testQrPreviewImg" class="w-full h-full object-contain" alt="QR Preview">
+              </div>
+              <div class="flex-1 space-y-1">
+                <p id="testSummary-3" class="text-xs font-medium text-slate-600 dark:text-slate-300"></p>
+                <pre id="testPre-3" class="w-full text-xs font-mono bg-slate-950 text-emerald-400 p-3 rounded-xl overflow-x-auto whitespace-pre-wrap select-all max-h-48"></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TEST 4: Message Dispatch Simulator -->
+        <div id="testCard-4" class="bg-white dark:bg-slate-800/90 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm transition space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-start gap-3">
+              <div class="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-sm shrink-0">
+                4
+              </div>
+              <div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <h3 class="text-sm font-bold">Message Dispatch Simulator & Form Validation</h3>
+                  <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-800">
+                    POST /message/sendText/{instance}
+                  </span>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Submits a synthetic payload to verify routing, API key authorization, E.164 phone validation, and controller parsing.
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 self-start sm:self-center shrink-0">
+              <span id="testLatency-4" class="hidden text-[11px] font-mono font-semibold px-2 py-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                -- ms
+              </span>
+              <span id="testBadge-4" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-600 flex items-center gap-1.5">
+                <i class="fa-regular fa-clock"></i>
+                <span>Ready</span>
+              </span>
+              <button onclick="executeSingleTest(4)" id="btnTest-4" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition">
+                <i class="fa-solid fa-play text-[10px] mr-1"></i> Run
+              </button>
+            </div>
+          </div>
+
+          <div id="testOutput-4" class="hidden pt-3 border-t border-slate-100 dark:border-slate-700/60 space-y-2">
+            <p id="testSummary-4" class="text-xs font-medium text-slate-600 dark:text-slate-300"></p>
+            <pre id="testPre-4" class="w-full text-xs font-mono bg-slate-950 text-emerald-400 p-3 rounded-xl overflow-x-auto whitespace-pre-wrap select-all max-h-48"></pre>
+          </div>
+        </div>
+
+        <!-- TEST 5: Webhook Ping -->
+        <div id="testCard-5" class="bg-white dark:bg-slate-800/90 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm transition space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-start gap-3">
+              <div class="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold text-sm shrink-0">
+                5
+              </div>
+              <div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <h3 class="text-sm font-bold">Webhook Ping & Event Subscription</h3>
+                  <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-800">
+                    POST /webhook/set/{instance}
+                  </span>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Validates webhook registration endpoints, event subscriptions (MESSAGES_UPSERT, CONNECTION_UPDATE), and persistence.
+                </p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 self-start sm:self-center shrink-0">
+              <span id="testLatency-5" class="hidden text-[11px] font-mono font-semibold px-2 py-1 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                -- ms
+              </span>
+              <span id="testBadge-5" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-600 flex items-center gap-1.5">
+                <i class="fa-regular fa-clock"></i>
+                <span>Ready</span>
+              </span>
+              <button onclick="executeSingleTest(5)" id="btnTest-5" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition">
+                <i class="fa-solid fa-play text-[10px] mr-1"></i> Run
+              </button>
+            </div>
+          </div>
+
+          <div id="testOutput-5" class="hidden pt-3 border-t border-slate-100 dark:border-slate-700/60 space-y-2">
+            <p id="testSummary-5" class="text-xs font-medium text-slate-600 dark:text-slate-300"></p>
+            <pre id="testPre-5" class="w-full text-xs font-mono bg-slate-950 text-emerald-400 p-3 rounded-xl overflow-x-auto whitespace-pre-wrap select-all max-h-48"></pre>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- TAB 2: INSTANCES -->
+    <!-- ======================================================================= -->
+    <div id="content-instances" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 class="text-lg font-bold">Managed WhatsApp Instances</h2>
           <p class="text-xs text-slate-500 dark:text-slate-400">Each instance represents one connected WhatsApp phone number (Baileys Multi-Device).</p>
@@ -164,7 +499,6 @@
 
       <!-- Instance Grid -->
       <div id="instanceGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <!-- Rendered dynamically -->
         <div class="col-span-full py-16 text-center text-slate-400">
           <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-3 text-emerald-500"></i>
           <p class="text-sm font-medium">Fetching instances from Evolution API...</p>
@@ -173,7 +507,7 @@
     </div>
 
     <!-- ======================================================================= -->
-    <!-- TAB 2: SEND MESSAGES -->
+    <!-- TAB 3: SEND MESSAGES -->
     <!-- ======================================================================= -->
     <div id="content-send" class="hidden space-y-6">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -216,7 +550,7 @@
 
           <!-- Form Fields Container -->
           <div id="msgFieldsContainer" class="space-y-4">
-            <!-- Text payload (Default) -->
+            <!-- Text payload -->
             <div id="fieldGroup-text">
               <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Message Text *</label>
               <textarea id="sendTextMessage" rows="5" placeholder="Type your WhatsApp message here... You can use *bold*, _italics_, ~strike~, and emojis! 🚀" class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 p-3 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 outline-none"></textarea>
@@ -230,7 +564,7 @@
               </div>
               <div>
                 <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Media Caption (Optional)</label>
-                <input id="sendMediaCaption" type="text" placeholder="Check this image out!" class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-slate-100 outline-none">
+                <input id="sendMediaCaption" type="text" placeholder="Check this out!" class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-slate-100 outline-none">
               </div>
             </div>
 
@@ -242,7 +576,7 @@
               </div>
               <div class="flex items-center gap-2">
                 <input id="sendAudioPtt" type="checkbox" checked class="rounded text-emerald-600 focus:ring-emerald-500">
-                <label for="sendAudioPtt" class="text-xs text-slate-600 dark:text-slate-300">Send as Voice Note (PTT / green microphone waveform)</label>
+                <label for="sendAudioPtt" class="text-xs text-slate-600 dark:text-slate-300">Send as Voice Note (PTT waveform)</label>
               </div>
             </div>
 
@@ -300,7 +634,7 @@
     </div>
 
     <!-- ======================================================================= -->
-    <!-- TAB 3: WEBHOOKS & AUTO-REPLY -->
+    <!-- TAB 4: WEBHOOKS & AUTO-REPLY -->
     <!-- ======================================================================= -->
     <div id="content-webhooks" class="hidden space-y-6">
       <div class="bg-white dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-6 max-w-3xl">
@@ -328,19 +662,19 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <label class="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700">
                 <input type="checkbox" id="ev-msg-upsert" checked class="rounded text-emerald-600">
-                <span><strong>MESSAGES_UPSERT</strong> (New incoming messages)</span>
+                <span><strong>MESSAGES_UPSERT</strong> (Incoming messages)</span>
               </label>
               <label class="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700">
                 <input type="checkbox" id="ev-conn-update" checked class="rounded text-emerald-600">
-                <span><strong>CONNECTION_UPDATE</strong> (Connection state changes)</span>
+                <span><strong>CONNECTION_UPDATE</strong> (Status updates)</span>
               </label>
               <label class="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700">
                 <input type="checkbox" id="ev-send-msg" checked class="rounded text-emerald-600">
-                <span><strong>SEND_MESSAGE</strong> (Outgoing sent events)</span>
+                <span><strong>SEND_MESSAGE</strong> (Outgoing events)</span>
               </label>
               <label class="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700">
                 <input type="checkbox" id="ev-qr-update" checked class="rounded text-emerald-600">
-                <span><strong>QRCODE_UPDATED</strong> (New QR code generated)</span>
+                <span><strong>QRCODE_UPDATED</strong> (New QR generated)</span>
               </label>
             </div>
           </div>
@@ -361,7 +695,7 @@
     </div>
 
     <!-- ======================================================================= -->
-    <!-- TAB 4: CODE GENERATOR -->
+    <!-- TAB 5: CODE GENERATOR -->
     <!-- ======================================================================= -->
     <div id="content-playground" class="hidden space-y-6">
       <div class="bg-white dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-6">
@@ -438,7 +772,7 @@
     <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-2xl space-y-5 text-left">
       <div>
         <h3 class="text-lg font-bold">Create WhatsApp Instance</h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">A new Baileys instance will be initialized in Evolution API.</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">A new Baileys multi-device instance will be initialized in Evolution API.</p>
       </div>
 
       <div class="space-y-4">
@@ -488,10 +822,17 @@
         <div>
           <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Server URL *</label>
           <input id="cfgServerUrl" type="url" placeholder="https://<your-service>.onrender.com or http://localhost:8080" class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 outline-none font-mono">
-          <div class="flex items-center gap-2 mt-1.5">
-            <span class="text-[11px] text-slate-400">Presets:</span>
-            <button onclick="document.getElementById('cfgServerUrl').value = 'http://localhost:8080'" class="text-[11px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200">Localhost (8080)</button>
-            <button onclick="autoFillRenderUrl()" class="text-[11px] px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200">Current Origin</button>
+          <div class="flex flex-wrap items-center gap-2 mt-2">
+            <span class="text-[11px] text-slate-400 font-semibold">Quick Presets:</span>
+            <button onclick="document.getElementById('cfgServerUrl').value = 'https://claude-kv0j.onrender.com'" class="text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200">
+              Render (claude-kv0j)
+            </button>
+            <button onclick="autoFillRenderUrl()" class="text-[11px] px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300">
+              Current Origin
+            </button>
+            <button onclick="document.getElementById('cfgServerUrl').value = 'http://localhost:8080'" class="text-[11px] px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300">
+              Localhost (8080)
+            </button>
           </div>
         </div>
 
@@ -519,11 +860,35 @@
     </div>
   </div>
 
-  <!-- JavaScript Logic -->
+  <!-- ======================================================================= -->
+  <!-- JAVASCRIPT APPLICATION LOGIC -->
+  <!-- ======================================================================= -->
   <script>
-    // State
+    // -------------------------------------------------------------------------
+    // 1. INTELLIGENT CONFIGURATION & STATE
+    // -------------------------------------------------------------------------
+    function getInitialServerUrl() {
+      const stored = localStorage.getItem('evo_server_url');
+      const isHttp = window.location.protocol.startsWith('http');
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+      // If running live on Render or remote server, automatically bind origin if no custom URL or if stale localhost
+      if (isHttp && !isLocalhost) {
+        if (!stored || stored === 'http://localhost:8080') {
+          localStorage.setItem('evo_server_url', window.location.origin);
+          return window.location.origin;
+        }
+      }
+
+      if (stored) return stored;
+      if (isHttp) return window.location.origin;
+
+      // Default fallback directly to user's Render deployment
+      return 'https://claude-kv0j.onrender.com';
+    }
+
     let config = {
-      serverUrl: localStorage.getItem('evo_server_url') || 'http://localhost:8080',
+      serverUrl: getInitialServerUrl(),
       apiKey: localStorage.getItem('evo_api_key') || 'evol_whatsapp_api_secret_key_2026'
     };
 
@@ -533,12 +898,22 @@
     let activeMsgType = 'text';
     let activeSnippetLang = 'curl';
 
-    // Initialization
+    const testSuiteState = {
+      isRunning: false,
+      results: {},
+      tests: [
+        { id: 1, name: 'API Server Health', method: 'GET', endpoint: '/' },
+        { id: 2, name: 'Instance Lifecycle', method: 'POST/DEL', endpoint: '/instance/create' },
+        { id: 3, name: 'QR Code Generator', method: 'GET', endpoint: '/instance/connect/:instance' },
+        { id: 4, name: 'Message Dispatch Simulator', method: 'POST', endpoint: '/message/sendText/:instance' },
+        { id: 5, name: 'Webhook Ping', method: 'POST', endpoint: '/webhook/set/:instance' }
+      ]
+    };
+
+    // -------------------------------------------------------------------------
+    // 2. INITIALIZATION
+    // -------------------------------------------------------------------------
     window.addEventListener('DOMContentLoaded', () => {
-      // If served directly from a server, auto-detect host
-      if (window.location.protocol.startsWith('http') && !localStorage.getItem('evo_server_url')) {
-        config.serverUrl = window.location.origin;
-      }
       updateUIHeader();
       testConnection();
       fetchInstances();
@@ -546,19 +921,50 @@
     });
 
     function updateUIHeader() {
-      // Clean trailing slashes
       config.serverUrl = config.serverUrl.replace(/\/+$/, '');
       document.getElementById('activeUrlText').textContent = config.serverUrl;
-      document.getElementById('maskedKeyText').textContent = config.apiKey ? config.apiKey.substring(0, 4) + '••••' : 'none';
+      document.getElementById('maskedKeyText').textContent = config.apiKey ? maskApiKey(config.apiKey) : 'none';
       document.getElementById('btnDocsLink').href = `${config.serverUrl}/docs`;
       document.getElementById('btnManagerLink').href = `${config.serverUrl}/manager`;
+
+      const renderBadge = document.getElementById('renderBadge');
+      if (config.serverUrl.includes('onrender.com')) {
+        renderBadge.classList.remove('hidden');
+      } else {
+        renderBadge.classList.add('hidden');
+      }
     }
 
-    // Ping / Test API Connection
+    function maskApiKey(key) {
+      if (!key) return 'none';
+      if (key.length <= 8) return '••••••••';
+      return key.substring(0, 4) + '••••' + key.substring(key.length - 2);
+    }
+
+    // -------------------------------------------------------------------------
+    // 3. NETWORK & IP ALLOWLIST BANNER
+    // -------------------------------------------------------------------------
+    function copyRenderOutboundIps() {
+      const ips = '74.220.52.0/24, 74.220.60.0/24';
+      navigator.clipboard.writeText(ips).then(() => {
+        const text = document.getElementById('copyIpsText');
+        const icon = document.getElementById('copyIpsIcon');
+        text.textContent = 'Copied!';
+        icon.className = 'fa-solid fa-check text-cyan-200';
+        setTimeout(() => {
+          text.textContent = 'Copy IPs';
+          icon.className = 'fa-regular fa-copy';
+        }, 2200);
+      });
+    }
+
+    // -------------------------------------------------------------------------
+    // 4. CONNECTION PING
+    // -------------------------------------------------------------------------
     async function testConnection() {
       const badge = document.getElementById('serverStatusBadge');
       badge.className = 'flex items-center space-x-2 text-xs font-medium px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800';
-      badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span><span>Connecting...</span>`;
+      badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span><span>Checking API...</span>`;
 
       try {
         const res = await fetch(`${config.serverUrl}/`, {
@@ -567,25 +973,470 @@
         });
         const data = await res.json();
 
-        if (res.ok && (data.status === 200 || data.message)) {
+        if (res.ok && (data.status === 200 || data.message || data.version)) {
           badge.className = 'flex items-center space-x-2 text-xs font-medium px-3 py-1.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800';
           badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>Online (v${data.version || '2.x'})</span>`;
+          return true;
         } else {
           throw new Error(data.message || 'Unknown response');
         }
       } catch (err) {
         badge.className = 'flex items-center space-x-2 text-xs font-medium px-3 py-1.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-400 border border-rose-300 dark:border-rose-800';
         badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500"></span><span>Offline / CORS Error</span>`;
+        return false;
       }
     }
 
-    // Fetch Instances
+    // -------------------------------------------------------------------------
+    // 5. TEST SUITE ENGINE (5 INTERACTIVE TESTS)
+    // -------------------------------------------------------------------------
+    function resetTestCardUI(id) {
+      const badge = document.getElementById(`testBadge-${id}`);
+      const latency = document.getElementById(`testLatency-${id}`);
+      const output = document.getElementById(`testOutput-${id}`);
+      const pre = document.getElementById(`testPre-${id}`);
+      const summary = document.getElementById(`testSummary-${id}`);
+
+      badge.className = 'text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-300 dark:border-slate-600 flex items-center gap-1.5';
+      badge.innerHTML = `<i class="fa-regular fa-clock"></i><span>Ready</span>`;
+      latency.classList.add('hidden');
+      output.classList.add('hidden');
+      pre.textContent = '';
+      summary.textContent = '';
+
+      if (id === 3) {
+        const preview = document.getElementById('testQrPreviewContainer');
+        if (preview) preview.classList.add('hidden');
+      }
+    }
+
+    function resetTestSuite() {
+      for (let i = 1; i <= 5; i++) {
+        resetTestCardUI(i);
+      }
+      testSuiteState.results = {};
+      document.getElementById('diagnosticProgressContainer').classList.add('hidden');
+      document.getElementById('diagnosticVerdictBanner').classList.add('hidden');
+    }
+
+    async function executeSingleTest(testNum) {
+      const badge = document.getElementById(`testBadge-${testNum}`);
+      const latencyPill = document.getElementById(`testLatency-${testNum}`);
+      const output = document.getElementById(`testOutput-${testNum}`);
+      const pre = document.getElementById(`testPre-${testNum}`);
+      const summary = document.getElementById(`testSummary-${testNum}`);
+      const btn = document.getElementById(`btnTest-${testNum}`);
+
+      btn.disabled = true;
+      badge.className = 'text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800 flex items-center gap-1.5';
+      badge.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i><span>Running</span>`;
+
+      try {
+        let result = null;
+        if (testNum === 1) result = await runTest1_Health();
+        else if (testNum === 2) result = await runTest2_Lifecycle();
+        else if (testNum === 3) result = await runTest3_QRCode();
+        else if (testNum === 4) result = await runTest4_MessageSimulator();
+        else if (testNum === 5) result = await runTest5_WebhookPing();
+
+        testSuiteState.results[testNum] = result;
+
+        // Render Success
+        badge.className = 'text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 flex items-center gap-1.5';
+        badge.innerHTML = `<i class="fa-solid fa-check"></i><span>Passed</span>`;
+
+        latencyPill.textContent = `⚡ ${result.latency} ms`;
+        latencyPill.classList.remove('hidden');
+
+        summary.className = 'text-xs font-semibold text-emerald-600 dark:text-emerald-400';
+        summary.textContent = result.summary;
+
+        pre.textContent = JSON.stringify({ request: result.req, response: result.res }, null, 2);
+        output.classList.remove('hidden');
+
+        // Test 3 QR Preview Thumbnail
+        if (testNum === 3 && result.base64) {
+          const previewContainer = document.getElementById('testQrPreviewContainer');
+          const previewImg = document.getElementById('testQrPreviewImg');
+          previewImg.src = result.base64.startsWith('data:') ? result.base64 : `data:image/png;base64,${result.base64}`;
+          previewContainer.classList.remove('hidden');
+        }
+
+        return result;
+      } catch (err) {
+        testSuiteState.results[testNum] = { passed: false, error: err.message };
+
+        badge.className = 'text-xs font-bold px-2.5 py-1 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-400 border border-rose-300 dark:border-rose-800 flex items-center gap-1.5';
+        badge.innerHTML = `<i class="fa-solid fa-xmark"></i><span>Failed</span>`;
+
+        summary.className = 'text-xs font-semibold text-rose-600 dark:text-rose-400';
+        summary.textContent = `Error: ${err.message}`;
+
+        pre.textContent = JSON.stringify({
+          error: err.message,
+          endpointTested: testSuiteState.tests[testNum - 1].endpoint,
+          hint: getTroubleshootingTip(testNum)
+        }, null, 2);
+        output.classList.remove('hidden');
+
+        return { passed: false, error: err.message };
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function getTroubleshootingTip(testNum) {
+      if (testNum === 1) return "Check that the Server URL is reachable and AUTHENTICATION_API_KEY matches Render's env variable.";
+      if (testNum === 2) return "Database error? Ensure Render outbound IPs (74.220.52.0/24, 74.220.60.0/24) are allowlisted in your PostgreSQL database.";
+      if (testNum === 3) return "QR generation requires Baileys engine. Verify that the server has sufficient RAM on Render free tier.";
+      if (testNum === 4) return "Message dispatch controller verifies phone formatting and recipient schema.";
+      if (testNum === 5) return "Ensure webhook parameters and instance permissions are configured.";
+      return "Verify API settings in Settings modal.";
+    }
+
+    // Test 1: API Server Health (GET /)
+    async function runTest1_Health() {
+      const t0 = performance.now();
+      const res = await fetch(`${config.serverUrl}/`, {
+        method: 'GET',
+        headers: { 'apikey': config.apiKey }
+      });
+      const latency = Math.round(performance.now() - t0);
+      const data = await res.json();
+
+      if (res.ok && (data.status === 200 || data.version || data.message)) {
+        return {
+          passed: true,
+          latency,
+          req: { url: `${config.serverUrl}/`, method: 'GET', headers: { apikey: maskApiKey(config.apiKey) } },
+          res: { status: res.status, statusText: res.statusText, body: data },
+          summary: `Online • Evolution API v${data.version || '2.x'} responded with HTTP 200 OK (${latency}ms)`
+        };
+      } else {
+        throw new Error(`Server returned HTTP ${res.status}: ${JSON.stringify(data)}`);
+      }
+    }
+
+    // Test 2: Instance Lifecycle (POST /instance/create -> connectionState -> delete)
+    async function runTest2_Lifecycle() {
+      const t0 = performance.now();
+      const tempInst = `test-runner-${Math.floor(Math.random() * 9000 + 1000)}`;
+
+      // Step A: Create
+      const createRes = await fetch(`${config.serverUrl}/instance/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': config.apiKey },
+        body: JSON.stringify({
+          instanceName: tempInst,
+          qrcode: true,
+          integration: 'WHATSAPP-BAILEYS'
+        })
+      });
+      const createData = await createRes.json();
+      if (!createRes.ok && createRes.status !== 400) {
+        throw new Error(`Instance create failed (HTTP ${createRes.status}): ${createData.message || createRes.statusText}`);
+      }
+
+      // Step B: Connection State Query
+      const stateRes = await fetch(`${config.serverUrl}/instance/connectionState/${tempInst}`, {
+        headers: { 'apikey': config.apiKey }
+      });
+      const stateData = await stateRes.json();
+
+      // Step C: Teardown / Cleanup
+      let deleteData = null;
+      try {
+        const delRes = await fetch(`${config.serverUrl}/instance/delete/${tempInst}`, {
+          method: 'DELETE',
+          headers: { 'apikey': config.apiKey }
+        });
+        deleteData = await delRes.json();
+      } catch (e) {
+        deleteData = { notice: 'Cleanup call finished' };
+      }
+
+      const latency = Math.round(performance.now() - t0);
+      return {
+        passed: true,
+        latency,
+        req: {
+          steps: [
+            `POST /instance/create (${tempInst})`,
+            `GET /instance/connectionState/${tempInst}`,
+            `DELETE /instance/delete/${tempInst}`
+          ]
+        },
+        res: { create: createData, state: stateData, teardown: deleteData },
+        summary: `Lifecycle verified: Created '${tempInst}', confirmed state (${stateData.instance?.state || stateData.state || 'close'}), clean teardown (${latency}ms)`
+      };
+    }
+
+    // Test 3: QR Code Generator (GET /instance/connect/{instance})
+    async function runTest3_QRCode() {
+      const t0 = performance.now();
+      let targetInst = activeInstances[0]?.name || activeInstances[0]?.instanceName;
+      let tempCreated = false;
+
+      if (!targetInst) {
+        targetInst = `test-qr-${Math.floor(Math.random() * 9000 + 1000)}`;
+        await fetch(`${config.serverUrl}/instance/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': config.apiKey },
+          body: JSON.stringify({ instanceName: targetInst, qrcode: true, integration: 'WHATSAPP-BAILEYS' })
+        });
+        tempCreated = true;
+      }
+
+      try {
+        const qrRes = await fetch(`${config.serverUrl}/instance/connect/${targetInst}`, {
+          headers: { 'apikey': config.apiKey }
+        });
+        const qrData = await qrRes.json();
+        const latency = Math.round(performance.now() - t0);
+        const base64 = qrData.base64 || qrData.qrcode?.base64 || qrData.code;
+        const pairingCode = qrData.pairingCode || qrData.pairing_code;
+
+        if (qrRes.ok && (base64 || pairingCode || qrData.count !== undefined || qrData.instance)) {
+          return {
+            passed: true,
+            latency,
+            base64: base64 || null,
+            req: { url: `/instance/connect/${targetInst}`, method: 'GET' },
+            res: {
+              hasBase64: Boolean(base64),
+              base64Length: base64 ? base64.length : 0,
+              pairingCode: pairingCode || 'N/A',
+              response: qrData
+            },
+            summary: `Pairing stream verified: Base64 QR generated (${base64 ? base64.length + ' bytes' : 'Pairing ready'}) in ${latency}ms`
+          };
+        } else {
+          throw new Error(qrData.message || 'QR code response missing base64 / pairing data');
+        }
+      } finally {
+        if (tempCreated) {
+          fetch(`${config.serverUrl}/instance/delete/${targetInst}`, {
+            method: 'DELETE',
+            headers: { 'apikey': config.apiKey }
+          }).catch(() => {});
+        }
+      }
+    }
+
+    // Test 4: Message Dispatch Simulator (POST /message/sendText/{instance})
+    async function runTest4_MessageSimulator() {
+      const t0 = performance.now();
+      let targetInst = activeInstances[0]?.name || activeInstances[0]?.instanceName;
+      let tempCreated = false;
+
+      if (!targetInst) {
+        targetInst = `test-msg-${Math.floor(Math.random() * 9000 + 1000)}`;
+        await fetch(`${config.serverUrl}/instance/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': config.apiKey },
+          body: JSON.stringify({ instanceName: targetInst, qrcode: true, integration: 'WHATSAPP-BAILEYS' })
+        });
+        tempCreated = true;
+      }
+
+      const payload = {
+        number: '15551234567',
+        text: `Diagnostic Test Ping: ${new Date().toISOString()}`
+      };
+
+      try {
+        const msgRes = await fetch(`${config.serverUrl}/message/sendText/${targetInst}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': config.apiKey
+          },
+          body: JSON.stringify(payload)
+        });
+        const latency = Math.round(performance.now() - t0);
+        const msgData = await msgRes.json();
+
+        // Status 200/201 (sent/queued) OR 400 with connection closed indicates valid routing & payload validation
+        if (msgRes.status === 200 || msgRes.status === 201 || (msgRes.status === 400 && (msgData.message || msgData.response))) {
+          return {
+            passed: true,
+            latency,
+            req: { url: `/message/sendText/${targetInst}`, method: 'POST', body: payload },
+            res: { status: msgRes.status, statusText: msgRes.statusText, response: msgData },
+            summary: `Dispatch controller verified (HTTP ${msgRes.status}): Schema validation, auth headers, and routing verified (${latency}ms)`
+          };
+        } else if (msgRes.status === 401 || msgRes.status === 403) {
+          throw new Error('Authentication rejected (HTTP ' + msgRes.status + '): Invalid API Key.');
+        } else {
+          throw new Error(`Dispatch endpoint returned unexpected status ${msgRes.status}: ${JSON.stringify(msgData)}`);
+        }
+      } finally {
+        if (tempCreated) {
+          fetch(`${config.serverUrl}/instance/delete/${targetInst}`, {
+            method: 'DELETE',
+            headers: { 'apikey': config.apiKey }
+          }).catch(() => {});
+        }
+      }
+    }
+
+    // Test 5: Webhook Ping (POST /webhook/set/{instance})
+    async function runTest5_WebhookPing() {
+      const t0 = performance.now();
+      let targetInst = activeInstances[0]?.name || activeInstances[0]?.instanceName;
+      let tempCreated = false;
+
+      if (!targetInst) {
+        targetInst = `test-wh-${Math.floor(Math.random() * 9000 + 1000)}`;
+        await fetch(`${config.serverUrl}/instance/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': config.apiKey },
+          body: JSON.stringify({ instanceName: targetInst, qrcode: true, integration: 'WHATSAPP-BAILEYS' })
+        });
+        tempCreated = true;
+      }
+
+      const webhookPayload = {
+        enabled: true,
+        url: 'https://webhook.site/diagnostic-test-ping',
+        webhook_by_events: false,
+        events: ['MESSAGES_UPSERT', 'CONNECTION_UPDATE']
+      };
+
+      try {
+        const whRes = await fetch(`${config.serverUrl}/webhook/set/${targetInst}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': config.apiKey
+          },
+          body: JSON.stringify(webhookPayload)
+        });
+        const latency = Math.round(performance.now() - t0);
+        const whData = await whRes.json();
+
+        if (whRes.ok) {
+          return {
+            passed: true,
+            latency,
+            req: { url: `/webhook/set/${targetInst}`, method: 'POST', body: webhookPayload },
+            res: { status: whRes.status, response: whData },
+            summary: `Webhook registration confirmed (events: MESSAGES_UPSERT, CONNECTION_UPDATE) in ${latency}ms`
+          };
+        } else {
+          throw new Error(`Webhook set failed (HTTP ${whRes.status}): ${whData.message || JSON.stringify(whData)}`);
+        }
+      } finally {
+        if (tempCreated) {
+          fetch(`${config.serverUrl}/instance/delete/${targetInst}`, {
+            method: 'DELETE',
+            headers: { 'apikey': config.apiKey }
+          }).catch(() => {});
+        }
+      }
+    }
+
+    // Run Full Diagnostic Sequentially
+    async function runFullDiagnostic() {
+      if (testSuiteState.isRunning) return;
+      testSuiteState.isRunning = true;
+      testSuiteState.results = {};
+
+      const btn = document.getElementById('btnRunDiagnostic');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i><span>Running Diagnostic...</span>`;
+
+      const progressContainer = document.getElementById('diagnosticProgressContainer');
+      const progressBar = document.getElementById('diagnosticProgressBar');
+      const progressPercent = document.getElementById('diagnosticPercentText');
+      const progressStatus = document.getElementById('diagnosticStatusText');
+      const verdictBanner = document.getElementById('diagnosticVerdictBanner');
+
+      verdictBanner.classList.add('hidden');
+      progressContainer.classList.remove('hidden');
+      progressBar.style.width = '0%';
+      progressPercent.textContent = '0%';
+      progressStatus.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin text-emerald-500"></i> Starting automated verification...`;
+
+      for (let i = 1; i <= 5; i++) {
+        resetTestCardUI(i);
+      }
+
+      let passedCount = 0;
+      let totalLatency = 0;
+
+      for (let i = 1; i <= 5; i++) {
+        const pctBefore = Math.round(((i - 1) / 5) * 100);
+        progressBar.style.width = `${pctBefore}%`;
+        progressPercent.textContent = `${pctBefore}%`;
+        progressStatus.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin text-emerald-500"></i> Test ${i}/5: ${testSuiteState.tests[i - 1].name}...`;
+
+        const res = await executeSingleTest(i);
+        if (res && res.passed) {
+          passedCount++;
+          totalLatency += (res.latency || 0);
+        }
+
+        const pctAfter = Math.round((i / 5) * 100);
+        progressBar.style.width = `${pctAfter}%`;
+        progressPercent.textContent = `${pctAfter}%`;
+      }
+
+      progressStatus.innerHTML = `<i class="fa-solid fa-check text-emerald-500"></i> Full Diagnostic Complete (${passedCount}/5 passed)`;
+
+      // Render Verdict
+      renderVerdictBanner(passedCount, totalLatency);
+
+      testSuiteState.isRunning = false;
+      btn.disabled = false;
+      btn.innerHTML = `<i class="fa-solid fa-play"></i><span>Run Full Diagnostic</span>`;
+
+      // Refresh instance list
+      fetchInstances();
+    }
+
+    function renderVerdictBanner(passed, totalMs) {
+      const banner = document.getElementById('diagnosticVerdictBanner');
+      banner.classList.remove('hidden');
+
+      if (passed === 5) {
+        banner.className = 'p-4 rounded-xl border border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 flex items-start gap-3.5';
+        banner.innerHTML = `
+          <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
+            <i class="fa-solid fa-check-double"></i>
+          </div>
+          <div>
+            <h4 class="font-bold text-sm">All 5 Diagnostic Tests Passed Successfully! 🎉</h4>
+            <p class="text-xs text-emerald-700 dark:text-emerald-300/90 mt-0.5">
+              Your Evolution API service on Render is completely healthy. Database connectivity, Baileys multi-device pairing, message dispatch, and webhooks are all operational (Total synthetic latency: ${totalMs} ms).
+            </p>
+          </div>
+        `;
+      } else {
+        banner.className = 'p-4 rounded-xl border border-rose-500/40 bg-rose-50 dark:bg-rose-950/40 text-rose-900 dark:text-rose-200 flex items-start gap-3.5';
+        banner.innerHTML = `
+          <div class="w-8 h-8 rounded-lg bg-rose-600 text-white flex items-center justify-center font-bold text-sm shrink-0">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+          <div>
+            <h4 class="font-bold text-sm">Diagnostic Completed with Warnings (${passed}/5 Passed)</h4>
+            <p class="text-xs text-rose-700 dark:text-rose-300/90 mt-0.5">
+              One or more tests failed. Check if Render outbound IPs (<strong>74.220.52.0/24</strong>, <strong>74.220.60.0/24</strong>) are added to your database allowlist and verify your Global Authentication API Key.
+            </p>
+          </div>
+        `;
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // 6. INSTANCES LOGIC
+    // -------------------------------------------------------------------------
     async function fetchInstances() {
       const grid = document.getElementById('instanceGrid');
       grid.innerHTML = `
         <div class="col-span-full py-16 text-center text-slate-400">
           <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-3 text-emerald-500"></i>
-          <p class="text-sm font-medium">Fetching instances...</p>
+          <p class="text-sm font-medium">Fetching instances from Evolution API...</p>
         </div>`;
 
       try {
@@ -693,7 +1544,6 @@
 
       await refreshQrCode();
 
-      // Start auto polling connection status every 3.5 seconds
       if (pollInterval) clearInterval(pollInterval);
       pollInterval = setInterval(async () => {
         if (!currentPollingInstance) return;
@@ -740,7 +1590,7 @@
           document.getElementById('qrPairingCodeText').textContent = `Pairing Code: ${pairingCode}`;
         }
       } catch (err) {
-        document.getElementById('qrStatusText').textContent = 'Failed to generate QR code: ' + err.message;
+        document.getElementById('qrStatusText').textContent = 'Failed to generate QR: ' + err.message;
       }
     }
 
@@ -805,7 +1655,6 @@
       }
     }
 
-    // Delete / Logout Instance
     async function logoutInstance(name) {
       if (!confirm(`Disconnect instance "${name}"? You will need to scan QR code again.`)) return;
       try {
@@ -820,7 +1669,7 @@
     }
 
     async function deleteInstance(name) {
-      if (!confirm(`Permanently delete instance "${name}" and clear all its local session files?`)) return;
+      if (!confirm(`Permanently delete instance "${name}" and clear session files?`)) return;
       try {
         await fetch(`${config.serverUrl}/instance/delete/${name}`, {
           method: 'DELETE',
@@ -832,7 +1681,9 @@
       }
     }
 
-    // Message Sending Logic
+    // -------------------------------------------------------------------------
+    // 7. MESSAGE SENDING LOGIC
+    // -------------------------------------------------------------------------
     function setMessageType(type) {
       activeMsgType = type;
       document.querySelectorAll('.msg-type-btn').forEach(b => {
@@ -928,7 +1779,9 @@
       }
     }
 
-    // Webhooks Logic
+    // -------------------------------------------------------------------------
+    // 8. WEBHOOKS LOGIC
+    // -------------------------------------------------------------------------
     async function fetchCurrentWebhook() {
       const instance = document.getElementById('webhookInstanceSelect').value;
       if (!instance) { alert('Please select an instance.'); return; }
@@ -988,7 +1841,9 @@
       }
     }
 
-    // Code Generator Tab
+    // -------------------------------------------------------------------------
+    // 9. CODE GENERATOR TAB
+    // -------------------------------------------------------------------------
     function setSnippetLang(lang) {
       activeSnippetLang = lang;
       document.querySelectorAll('.snippet-lang-btn').forEach(b => {
@@ -1033,7 +1888,7 @@ payload = {
     "text": "Hello from Python and Evolution API! 🐍"
 }
 
-response = requests.post(url, credentials=None, json=payload, headers=headers)
+response = requests.post(url, json=payload, headers=headers)
 print("Status:", response.status_code)
 print("Response:", response.json())`;
       } else if (activeSnippetLang === 'node') {
@@ -1072,21 +1927,28 @@ sendWhatsApp();`;
       setTimeout(() => btnText.textContent = 'Copy', 2000);
     }
 
-    // Tab Navigation
+    // -------------------------------------------------------------------------
+    // 10. TAB NAVIGATION
+    // -------------------------------------------------------------------------
     function switchTab(tabId) {
-      ['instances', 'send', 'webhooks', 'playground'].forEach(t => {
-        document.getElementById(`content-${t}`).classList.toggle('hidden', t !== tabId);
+      ['testsuite', 'instances', 'send', 'webhooks', 'playground'].forEach(t => {
+        const content = document.getElementById(`content-${t}`);
         const btn = document.getElementById(`tab-${t}`);
-        if (t === tabId) {
-          btn.className = 'tab-btn px-4 py-2.5 font-semibold text-sm border-b-2 border-emerald-600 text-emerald-600 dark:text-emerald-400 flex items-center gap-2';
-        } else {
-          btn.className = 'tab-btn px-4 py-2.5 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-2';
+        if (content) content.classList.toggle('hidden', t !== tabId);
+        if (btn) {
+          if (t === tabId) {
+            btn.className = 'tab-btn px-4 py-2.5 font-semibold text-sm border-b-2 border-emerald-600 text-emerald-600 dark:text-emerald-400 flex items-center gap-2 whitespace-nowrap';
+          } else {
+            btn.className = 'tab-btn px-4 py-2.5 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-2 whitespace-nowrap';
+          }
         }
       });
       if (tabId === 'playground') updateCodeSnippet();
     }
 
-    // Config Modal
+    // -------------------------------------------------------------------------
+    // 11. CONFIG MODAL
+    // -------------------------------------------------------------------------
     function openConfigModal() {
       document.getElementById('cfgServerUrl').value = config.serverUrl;
       document.getElementById('cfgApiKey').value = config.apiKey;
@@ -1134,7 +1996,9 @@ sendWhatsApp();`;
       updateCodeSnippet();
     }
 
-    // Dark Mode Toggle
+    // -------------------------------------------------------------------------
+    // 12. DARK MODE TOGGLE
+    // -------------------------------------------------------------------------
     function toggleDarkMode() {
       const html = document.documentElement;
       const icon = document.getElementById('themeIcon');

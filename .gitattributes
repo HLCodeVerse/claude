@@ -6,3 +6,5 @@
 *.sh text eol=lf
 docker-entrypoint.sh text eol=lf
 Dockerfile text eol=lf
+gateway.js text eol=lf
+.dockerignore text eol=lf

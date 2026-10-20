@@ -5,27 +5,25 @@ echo "=========================================================="
 echo " Starting Free WhatsApp Service (Evolution API v2)"
 echo "=========================================================="
 
-# 1. Port Detection: Render sets $PORT dynamically (often 10000)
-if [ -n "$PORT" ]; then
-  export SERVER_PORT="$PORT"
-  echo "[-] Detected Render PORT: $PORT -> Setting SERVER_PORT=$PORT"
-fi
+# 1. Port Detection & Configuration
+# External Port: Render sets $PORT dynamically (often 10000), docker-compose sets $SERVER_PORT (8080)
+EXTERNAL_PORT="${PORT:-${SERVER_PORT:-8080}}"
+export GATEWAY_PORT="$EXTERNAL_PORT"
+export EVOLUTION_INTERNAL_PORT="${EVOLUTION_INTERNAL_PORT:-8082}"
 
-if [ -z "$SERVER_PORT" ]; then
-  export SERVER_PORT=8080
-  echo "[-] Defaulting SERVER_PORT to 8080"
-fi
+echo "[-] External Gateway Port   : $EXTERNAL_PORT"
+echo "[-] Evolution API Port (Int): $EVOLUTION_INTERNAL_PORT"
 
 # 2. Server URL Detection: Render provides $RENDER_EXTERNAL_URL
 if [ -n "$RENDER_EXTERNAL_URL" ]; then
-  if [ -z "$SERVER_URL" ] || [ "$SERVER_URL" = "http://localhost:8080" ] || [ "$SERVER_URL" = "http://localhost:$SERVER_PORT" ]; then
+  if [ -z "$SERVER_URL" ] || [ "$SERVER_URL" = "http://localhost:8080" ] || [ "$SERVER_URL" = "http://localhost:$EXTERNAL_PORT" ]; then
     export SERVER_URL="$RENDER_EXTERNAL_URL"
     echo "[-] Auto-configured SERVER_URL from Render: $SERVER_URL"
   fi
 fi
 
 if [ -z "$SERVER_URL" ]; then
-  export SERVER_URL="http://localhost:${SERVER_PORT}"
+  export SERVER_URL="http://localhost:${EXTERNAL_PORT}"
 fi
 
 # 3. API Key Default
@@ -58,11 +56,28 @@ fi
 echo "=========================================================="
 echo " WhatsApp Service Ready"
 echo " Server URL   : $SERVER_URL"
-echo " Port         : $SERVER_PORT"
+echo " Gateway Port : $EXTERNAL_PORT"
+echo " Internal Port: $EVOLUTION_INTERNAL_PORT"
 echo " Database     : $DATABASE_ENABLED"
+echo " Dashboard UI : $SERVER_URL/dashboard"
 echo " Swagger Docs : $SERVER_URL/docs"
 echo " Manager UI   : $SERVER_URL/manager"
+echo " Health Check : $SERVER_URL/health"
 echo "=========================================================="
 
-# Execute Evolution API production start
+# 6. Start Node.js Reverse Proxy Gateway on external port
+GATEWAY_SCRIPT="/evolution/gateway.js"
+if [ ! -f "$GATEWAY_SCRIPT" ]; then
+  GATEWAY_SCRIPT="./gateway.js"
+fi
+
+echo "[-] Launching Node Gateway reverse proxy on port $EXTERNAL_PORT..."
+PORT="$EXTERNAL_PORT" SERVER_PORT="$EXTERNAL_PORT" EVOLUTION_INTERNAL_PORT="$EVOLUTION_INTERNAL_PORT" node "$GATEWAY_SCRIPT" &
+GATEWAY_PID=$!
+
+# 7. Configure internal port for Evolution API and start
+export SERVER_PORT="$EVOLUTION_INTERNAL_PORT"
+export PORT="$EVOLUTION_INTERNAL_PORT"
+
+echo "[-] Launching Evolution API on internal port $EVOLUTION_INTERNAL_PORT..."
 exec npm run start:prod

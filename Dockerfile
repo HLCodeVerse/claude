@@ -1,6 +1,7 @@
 # ==============================================================================
 # Evolution API v2 - Free WhatsApp Service Dockerfile
 # Optimized for Render Cloud Deployment & Local Docker
+# Includes Zero-Dependency Node.js Reverse Proxy Gateway & Static Dashboard
 # ==============================================================================
 FROM evoapicloud/evolution-api:v2.2.3
 
@@ -15,6 +16,10 @@ RUN mkdir -p /evolution/instances /evolution/public
 COPY docker-entrypoint.sh /usr/local/bin/custom-entrypoint.sh
 RUN chmod +x /usr/local/bin/custom-entrypoint.sh
 
+# Copy Node.js reverse proxy gateway and static dashboard UI
+COPY gateway.js /evolution/gateway.js
+COPY dashboard/ /evolution/dashboard/
+
 # Render and standard ports
 EXPOSE 8080 10000
 
@@ -22,6 +27,7 @@ EXPOSE 8080 10000
 ENV NODE_ENV=production \
     SERVER_TYPE=http \
     SERVER_PORT=8080 \
+    EVOLUTION_INTERNAL_PORT=8082 \
     AUTHENTICATION_TYPE=apikey \
     AUTHENTICATION_API_KEY=evol_whatsapp_api_secret_key_2026 \
     AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=true \
