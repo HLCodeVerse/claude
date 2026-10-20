@@ -2399,9 +2399,9 @@
 
         if (!foundCode || foundCode.length > 12) {
           // Poll for 8-digit code
-          while (attempts < 10) {
+          while (attempts < 4) {
             attempts++;
-            await new Promise(r => setTimeout(r, 1500));
+            await new Promise(r => setTimeout(r, 1200));
 
             const pollRes = await fetch(`${config.serverUrl}/instance/connect/${currentPollingInstance}?number=${fullPhoneNumber}`, {
               headers: { 'apikey': config.apiKey }
@@ -2411,6 +2411,33 @@
             if (pollData.pairingCode && typeof pollData.pairingCode === 'string') {
               foundCode = pollData.pairingCode;
               break;
+            }
+          }
+
+          // If still no code, re-initialize instance directly with number for instant Baileys pairing code
+          if (!foundCode) {
+            await fetch(`${config.serverUrl}/instance/delete/${currentPollingInstance}`, {
+              method: 'DELETE',
+              headers: { 'apikey': config.apiKey }
+            }).catch(() => {});
+            await new Promise(r => setTimeout(r, 600));
+            const cRes = await fetch(`${config.serverUrl}/instance/create`, {
+              method: 'POST',
+              headers: { 'apikey': config.apiKey, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                instanceName: currentPollingInstance,
+                token: config.apiKey,
+                qrcode: true,
+                number: fullPhoneNumber,
+                integration: 'WHATSAPP-BAILEYS',
+                syncFullHistory: true,
+                groupsIgnore: false,
+                alwaysOnline: true
+              })
+            }).catch(() => null);
+            if (cRes && cRes.ok) {
+              const cData = await cRes.json().catch(() => ({}));
+              foundCode = cData?.qrcode?.pairingCode || cData?.pairingCode;
             }
           }
         }
