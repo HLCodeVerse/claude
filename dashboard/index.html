@@ -2358,7 +2358,28 @@
       }
     }
 
-    // Request 8-Digit Secret Pairing Code (Fixed with Handshake Polling)
+    // Extracts strictly 8-digit alphanumeric WhatsApp pairing code (never QR payload)
+    function extract8DigitCode(data) {
+      if (!data) return null;
+      const candidates = [
+        data.pairingCode,
+        data.pairing_code,
+        data.qrcode?.pairingCode,
+        data.qrcode?.pairing_code,
+        data.response?.pairingCode
+      ];
+      for (const c of candidates) {
+        if (typeof c === 'string') {
+          const clean = c.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+          if (clean.length === 8 && !c.includes('@') && !c.includes(',')) {
+            return clean;
+          }
+        }
+      }
+      return null;
+    }
+
+    // Request 8-Digit Secret Pairing Code (Fixed with Strict Handshake Polling)
     async function request8DigitPairingCode() {
       if (!currentPollingInstance) return;
 
@@ -2390,60 +2411,73 @@
         // Step 1: Initiate pairing connection with number query parameter
         const initialRes = await fetch(`${config.serverUrl}/instance/connect/${currentPollingInstance}?number=${fullPhoneNumber}`, {
           headers: { 'apikey': config.apiKey }
-        });
-        const initialData = await initialRes.json();
+        }).catch(() => null);
+        const initialData = initialRes && initialRes.ok ? await initialRes.json().catch(() => ({})) : {};
 
-        // Step 2: Poll every 1.5s until Baileys yields the pairingCode
-        let attempts = 0;
-        let foundCode = initialData.pairingCode || initialData.code || initialData.pairing_code;
+        let foundCode = extract8DigitCode(initialData);
 
-        if (!foundCode || foundCode.length > 12) {
-          // Poll for 8-digit code
-          while (attempts < 4) {
+        // Step 2: Poll up to 8 times (~16s) until Baileys completes WhatsApp server handshake
+        if (!foundCode) {
+          let attempts = 0;
+          while (attempts < 8) {
             attempts++;
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 2000));
 
             const pollRes = await fetch(`${config.serverUrl}/instance/connect/${currentPollingInstance}?number=${fullPhoneNumber}`, {
               headers: { 'apikey': config.apiKey }
-            });
-            const pollData = await pollRes.json();
-
-            if (pollData.pairingCode && typeof pollData.pairingCode === 'string') {
-              foundCode = pollData.pairingCode;
-              break;
-            }
-          }
-
-          // If still no code, re-initialize instance directly with number for instant Baileys pairing code
-          if (!foundCode) {
-            await fetch(`${config.serverUrl}/instance/delete/${currentPollingInstance}`, {
-              method: 'DELETE',
-              headers: { 'apikey': config.apiKey }
-            }).catch(() => {});
-            await new Promise(r => setTimeout(r, 600));
-            const cRes = await fetch(`${config.serverUrl}/instance/create`, {
-              method: 'POST',
-              headers: { 'apikey': config.apiKey, 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                instanceName: currentPollingInstance,
-                token: config.apiKey,
-                qrcode: true,
-                number: fullPhoneNumber,
-                integration: 'WHATSAPP-BAILEYS',
-                syncFullHistory: true,
-                groupsIgnore: false,
-                alwaysOnline: true
-              })
             }).catch(() => null);
-            if (cRes && cRes.ok) {
-              const cData = await cRes.json().catch(() => ({}));
-              foundCode = cData?.qrcode?.pairingCode || cData?.pairingCode;
+
+            if (pollRes && pollRes.ok) {
+              const pollData = await pollRes.json().catch(() => ({}));
+              foundCode = extract8DigitCode(pollData);
+              if (foundCode) break;
             }
           }
         }
 
-        if (foundCode && typeof foundCode === 'string') {
-          currentRawPairingCode = foundCode.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+        // Step 3: If still no code, recreate instance directly with number for instant Baileys pairing code
+        if (!foundCode) {
+          await fetch(`${config.serverUrl}/instance/delete/${currentPollingInstance}`, {
+            method: 'DELETE',
+            headers: { 'apikey': config.apiKey }
+          }).catch(() => {});
+          await new Promise(r => setTimeout(r, 800));
+          const cRes = await fetch(`${config.serverUrl}/instance/create`, {
+            method: 'POST',
+            headers: { 'apikey': config.apiKey, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              instanceName: currentPollingInstance,
+              token: config.apiKey,
+              qrcode: true,
+              number: fullPhoneNumber,
+              integration: 'WHATSAPP-BAILEYS',
+              syncFullHistory: true,
+              groupsIgnore: false,
+              alwaysOnline: true
+            })
+          }).catch(() => null);
+
+          if (cRes && cRes.ok) {
+            const cData = await cRes.json().catch(() => ({}));
+            foundCode = extract8DigitCode(cData);
+            if (!foundCode) {
+              for (let j = 0; j < 5; j++) {
+                await new Promise(r => setTimeout(r, 2000));
+                const pRes = await fetch(`${config.serverUrl}/instance/connect/${currentPollingInstance}?number=${fullPhoneNumber}`, {
+                  headers: { 'apikey': config.apiKey }
+                }).catch(() => null);
+                if (pRes && pRes.ok) {
+                  const pData = await pRes.json().catch(() => ({}));
+                  foundCode = extract8DigitCode(pData);
+                  if (foundCode) break;
+                }
+              }
+            }
+          }
+        }
+
+        if (foundCode && foundCode.length === 8) {
+          currentRawPairingCode = foundCode;
 
           const part1 = currentRawPairingCode.slice(0, 4);
           const part2 = currentRawPairingCode.slice(4);

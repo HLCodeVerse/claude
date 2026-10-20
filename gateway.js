@@ -18,6 +18,7 @@
  */
 
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const url = require('url');
@@ -302,6 +303,33 @@ function cleanMediaPayload(rawBody) {
 // Global API key from environment
 const GLOBAL_API_KEY = process.env.AUTHENTICATION_API_KEY || 'evol_whatsapp_api_secret_key_2026';
 
+// Sets instance settings (alwaysOnline: true, syncFullHistory: true) so connection stays open forever
+function ensureInstanceSettings(instanceName) {
+  if (!instanceName) return;
+  const settingsPayload = JSON.stringify({
+    rejectCall: false,
+    msgCall: '',
+    groupsIgnore: false,
+    alwaysOnline: true,
+    readMessages: false,
+    readStatus: false,
+    syncFullHistory: true
+  });
+  const req = http.request({
+    hostname: INTERNAL_HOST,
+    port: INTERNAL_PORT,
+    path: `/settings/set/${instanceName}`,
+    method: 'POST',
+    headers: {
+      'apikey': GLOBAL_API_KEY,
+      'content-type': 'application/json',
+      'content-length': Buffer.byteLength(settingsPayload)
+    }
+  }, (res) => { res.resume(); });
+  req.on('error', () => {});
+  req.end(settingsPayload);
+}
+
 // Tracks instances that user deliberately disconnected/unlinked to prevent keepalive loop collisions
 const disconnectedByUser = new Set();
 
@@ -370,6 +398,7 @@ function ensureInstanceOnline(instanceName, callback) {
 
       if (state === 'open') {
         disconnectedByUser.delete(instanceName);
+        ensureInstanceSettings(instanceName);
         if (callback) callback(true);
       } else {
         if (disconnectedByUser.has(instanceName)) {
@@ -439,7 +468,7 @@ initAutoRevivePoller();
 function initForeverKeepAlive() {
   const KEEP_ALIVE_INTERVAL = 3 * 60 * 1000; // Every 3 minutes
   setInterval(() => {
-    // 1. Touch health endpoint
+    // 1. Touch internal health endpoint
     const pingReq = http.request({
       hostname: INTERNAL_HOST,
       port: INTERNAL_PORT,
@@ -459,6 +488,32 @@ function initForeverKeepAlive() {
 }
 
 initForeverKeepAlive();
+
+// External Self-Ping: Pings public Render URL every 7 minutes to prevent free-tier container sleep
+function initExternalSelfPing() {
+  const externalUrl = process.env.RENDER_EXTERNAL_URL || 'https://claude-kv0j.onrender.com';
+  const PING_INTERVAL = 7 * 60 * 1000; // Every 7 minutes (Render free tier sleeps after 15m)
+
+  console.log(`[Gateway Keep-Alive] External self-ping configured for: ${externalUrl}`);
+
+  setInterval(() => {
+    try {
+      const parsed = new URL(`${externalUrl}/health`);
+      const client = parsed.protocol === 'https:' ? https : http;
+      const pingReq = client.get(parsed.toString(), (res) => {
+        res.resume();
+      });
+      pingReq.on('error', () => {
+        // Silently catch transient DNS/network blips
+      });
+      pingReq.setTimeout(15000, () => pingReq.destroy());
+    } catch (e) {
+      // Ignore URL parse error
+    }
+  }, PING_INTERVAL);
+}
+
+initExternalSelfPing();
 
 // Transparent HTTP reverse proxy to Evolution API with auto-retry and offline auto-revive
 function proxyHttpRequest(req, res) {
