@@ -2224,7 +2224,11 @@
         // Evolution API v2 uses POST /instance/restart/:instance
         let res = await fetch(`${config.serverUrl}/instance/restart/${name}`, {
           method: 'POST',
-          headers: { 'apikey': config.apiKey }
+          headers: {
+            'apikey': config.apiKey,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({})
         });
 
         // Fallback to PUT if POST fails
@@ -2235,10 +2239,15 @@
           });
         }
 
-        // Wait 2.5 seconds for socket reboot
-        await new Promise(r => setTimeout(r, 2500));
+        // Wake up socket
+        await fetch(`${config.serverUrl}/instance/connect/${name}`, {
+          headers: { 'apikey': config.apiKey }
+        }).catch(() => {});
 
-        showToast(`Instance "${name}" restarted successfully! 🎉`, 'success', 3500);
+        // Wait 2 seconds for socket reboot
+        await new Promise(r => setTimeout(r, 2000));
+
+        showToast(`Instance "${name}" restarted successfully! 🔄`, 'success', 3500);
         await fetchInstances();
       } catch (err) {
         showToast(`Restart failed: ${err.message}`, 'error', 4000);
@@ -2394,7 +2403,7 @@
             attempts++;
             await new Promise(r => setTimeout(r, 1500));
 
-            const pollRes = await fetch(`${config.serverUrl}/instance/connect/${currentPollingInstance}`, {
+            const pollRes = await fetch(`${config.serverUrl}/instance/connect/${currentPollingInstance}?number=${fullPhoneNumber}`, {
               headers: { 'apikey': config.apiKey }
             });
             const pollData = await pollRes.json();
@@ -2562,15 +2571,42 @@
     }
 
     async function logoutInstance(name) {
-      if (!confirm(`Disconnect instance "${name}"? You will need to link again.`)) return;
+      if (!confirm(`Disconnect instance "${name}"? You will be able to re-link immediately to sync all past message history.`)) return;
       showToast(`Disconnecting session for "${name}"...`, 'info', 2500);
 
       try {
+        // 1. Tell Evolution API to log out session
         await fetch(`${config.serverUrl}/instance/logout/${name}`, {
           method: 'DELETE',
           headers: { 'apikey': config.apiKey }
-        });
-        showToast(`Instance "${name}" disconnected.`, 'warning');
+        }).catch(() => {});
+
+        // 2. Clear old session state from backend
+        await fetch(`${config.serverUrl}/instance/delete/${name}`, {
+          method: 'DELETE',
+          headers: { 'apikey': config.apiKey }
+        }).catch(() => {});
+
+        // 3. Immediately recreate a fresh instance configured with full history sync
+        await new Promise(r => setTimeout(r, 800));
+        await fetch(`${config.serverUrl}/instance/create`, {
+          method: 'POST',
+          headers: {
+            'apikey': config.apiKey,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            instanceName: name,
+            token: config.apiKey,
+            qrcode: true,
+            integration: 'WHATSAPP-BAILEYS',
+            syncFullHistory: true,
+            groupsIgnore: false,
+            alwaysOnline: true
+          })
+        }).catch(() => {});
+
+        showToast(`Instance "${name}" disconnected. Ready for fresh pairing! 📱`, 'warning', 3500);
         await fetchInstances();
       } catch (e) {
         showToast('Failed to logout: ' + e.message, 'error');

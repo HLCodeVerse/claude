@@ -302,6 +302,9 @@ function cleanMediaPayload(rawBody) {
 // Global API key from environment
 const GLOBAL_API_KEY = process.env.AUTHENTICATION_API_KEY || 'evol_whatsapp_api_secret_key_2026';
 
+// Tracks instances that user deliberately disconnected/unlinked to prevent keepalive loop collisions
+const disconnectedByUser = new Set();
+
 // Checks if instance is online, and if offline or non-existent, instantly brings it online
 function ensureInstanceOnline(instanceName, callback) {
   if (!instanceName) {
@@ -366,8 +369,14 @@ function ensureInstanceOnline(instanceName, callback) {
       }
 
       if (state === 'open') {
+        disconnectedByUser.delete(instanceName);
         if (callback) callback(true);
       } else {
+        if (disconnectedByUser.has(instanceName)) {
+          console.log(`[Gateway Auto-Revive] Instance "${instanceName}" was intentionally disconnected by user. Skipping background auto-reconnect.`);
+          if (callback) callback(false);
+          return;
+        }
         console.log(`[Gateway Auto-Revive] Instance "${instanceName}" is "${state}". Reconnecting socket...`);
         const connReq = http.request({
           hostname: INTERNAL_HOST,
@@ -442,8 +451,10 @@ function initForeverKeepAlive() {
     pingReq.on('error', () => {});
     pingReq.end();
 
-    // 2. Keep instance "hl" active and auto-reconnect if dropped
-    ensureInstanceOnline('hl', () => {});
+    // 2. Keep instance "hl" active and auto-reconnect if dropped UNLESS intentionally disconnected by user
+    if (!disconnectedByUser.has('hl')) {
+      ensureInstanceOnline('hl', () => {});
+    }
   }, KEEP_ALIVE_INTERVAL);
 }
 
@@ -451,6 +462,24 @@ initForeverKeepAlive();
 
 // Transparent HTTP reverse proxy to Evolution API with auto-retry and offline auto-revive
 function proxyHttpRequest(req, res) {
+  // Track deliberate logout or delete to prevent keepalive collision
+  const isLogoutOrDelete = req.method === 'DELETE' && (req.url.startsWith('/instance/logout/') || req.url.startsWith('/instance/delete/'));
+  if (isLogoutOrDelete) {
+    const parts = req.url.split('?')[0].split('/');
+    if (parts.length >= 4 && parts[3]) {
+      disconnectedByUser.add(parts[3]);
+      console.log(`[Gateway] User requested logout/delete for instance "${parts[3]}". Pausing auto-reconnect.`);
+    }
+  }
+
+  // Clear logout lock when connect endpoint is hit
+  if (req.url.startsWith('/instance/connect/')) {
+    const parts = req.url.split('?')[0].split('/');
+    if (parts.length >= 4 && parts[3]) {
+      disconnectedByUser.delete(parts[3]);
+    }
+  }
+
   const clientIp = req.socket.remoteAddress || '';
   const forwardedFor = req.headers['x-forwarded-for']
     ? `${req.headers['x-forwarded-for']}, ${clientIp}`
