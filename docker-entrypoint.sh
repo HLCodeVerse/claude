@@ -6,7 +6,6 @@ echo " Starting Free WhatsApp Service (Evolution API v2)"
 echo "=========================================================="
 
 # 1. Port Detection & Configuration
-# External Port: Render sets $PORT dynamically (often 10000), docker-compose sets $SERVER_PORT (8080)
 EXTERNAL_PORT="${PORT:-${SERVER_PORT:-8080}}"
 export GATEWAY_PORT="$EXTERNAL_PORT"
 export EVOLUTION_INTERNAL_PORT="${EVOLUTION_INTERNAL_PORT:-8082}"
@@ -35,22 +34,57 @@ else
   echo "[-] AUTHENTICATION_API_KEY is configured."
 fi
 
-# 4. Storage directories
-mkdir -p /evolution/instances /evolution/public
+# 4. Storage Directories
+mkdir -p /evolution/instances /evolution/public /var/lib/postgresql/data /run/postgresql
+chown -R postgres:postgres /var/lib/postgresql /run/postgresql
+chmod 775 /run/postgresql
 
-# 5. Database Connection Handling
-if [ -n "$DATABASE_CONNECTION_URI" ]; then
+# 5. Redis Settings (Disable external Redis to prevent disconnect errors)
+export CACHE_REDIS_ENABLED="${CACHE_REDIS_ENABLED:-false}"
+export CACHE_LOCAL_ENABLED=true
+
+# 6. Database Configuration (Embedded PostgreSQL or External DB)
+if [ -z "$DATABASE_CONNECTION_URI" ] || [ "$DATABASE_CONNECTION_URI" = "postgresql://user:pass@localhost:5432/evolution?schema=public" ]; then
+  echo "[-] No external DATABASE_CONNECTION_URI provided."
+  echo "[-] Starting embedded PostgreSQL daemon on 127.0.0.1:5432..."
+
+  if [ ! -d "/var/lib/postgresql/data/base" ]; then
+    echo "[-] Initializing new PostgreSQL cluster in /var/lib/postgresql/data..."
+    su-exec postgres initdb -D /var/lib/postgresql/data -E UTF8 --locale=C
+    echo "listen_addresses = '127.0.0.1'" >> /var/lib/postgresql/data/postgresql.conf
+    echo "host all all 127.0.0.1/32 trust" > /var/lib/postgresql/data/pg_hba.conf
+    echo "local all all trust" >> /var/lib/postgresql/data/pg_hba.conf
+  fi
+
+  # Start PostgreSQL daemon in the background
+  su-exec postgres pg_ctl -D /var/lib/postgresql/data -o "-p 5432 -h 127.0.0.1" -w start
+
+  # Provision user and database
+  su-exec postgres psql -p 5432 -U postgres -c "CREATE USER evolution WITH PASSWORD 'evolution_password_secure';" || true
+  su-exec postgres psql -p 5432 -U postgres -c "CREATE DATABASE evolution OWNER evolution;" || true
+  su-exec postgres psql -p 5432 -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE evolution TO evolution;" || true
+
   export DATABASE_ENABLED=true
-  if [ -z "$DATABASE_PROVIDER" ]; then
-    export DATABASE_PROVIDER=postgresql
-  fi
-  echo "[-] Database configured ($DATABASE_PROVIDER). Running migrations..."
-  if [ -f "./Docker/scripts/deploy_database.sh" ]; then
-    . ./Docker/scripts/deploy_database.sh || echo "[!] Database migration notice: Continuing..."
-  fi
+  export DATABASE_PROVIDER=postgresql
+  export DATABASE_CONNECTION_URI="postgresql://evolution:evolution_password_secure@127.0.0.1:5432/evolution?schema=public"
+  echo "[-] Embedded PostgreSQL initialized and ready at: $DATABASE_CONNECTION_URI"
 else
-  export DATABASE_ENABLED=false
-  echo "[-] No DATABASE_CONNECTION_URI detected. Running in standalone mode."
+  echo "[-] Using external DATABASE_CONNECTION_URI: $DATABASE_CONNECTION_URI"
+  export DATABASE_ENABLED=true
+  export DATABASE_PROVIDER=postgresql
+fi
+
+# Mediator optimization: minimal database overhead for pure messaging proxy
+export DATABASE_SAVE_DATA_INSTANCE=true
+export DATABASE_SAVE_DATA_NEW_MESSAGE="${DATABASE_SAVE_DATA_NEW_MESSAGE:-false}"
+export DATABASE_SAVE_MESSAGE_UPDATE="${DATABASE_SAVE_MESSAGE_UPDATE:-false}"
+export DATABASE_SAVE_DATA_CONTACTS="${DATABASE_SAVE_DATA_CONTACTS:-false}"
+export DATABASE_SAVE_DATA_CHATS="${DATABASE_SAVE_DATA_CHATS:-false}"
+
+# 7. Apply Database Migrations (Prisma)
+echo "[-] Applying Evolution API Prisma database migrations..."
+if [ -f "./Docker/scripts/deploy_database.sh" ]; then
+  . ./Docker/scripts/deploy_database.sh || echo "[!] Database migration notice: continuing startup..."
 fi
 
 echo "=========================================================="
@@ -58,14 +92,16 @@ echo " WhatsApp Service Ready"
 echo " Server URL   : $SERVER_URL"
 echo " Gateway Port : $EXTERNAL_PORT"
 echo " Internal Port: $EVOLUTION_INTERNAL_PORT"
-echo " Database     : $DATABASE_ENABLED"
+echo " Database     : $DATABASE_PROVIDER ($DATABASE_CONNECTION_URI)"
+echo " Redis        : $CACHE_REDIS_ENABLED (Local cache: $CACHE_LOCAL_ENABLED)"
 echo " Dashboard UI : $SERVER_URL/dashboard"
+echo " Test Suite   : $SERVER_URL/test"
 echo " Swagger Docs : $SERVER_URL/docs"
 echo " Manager UI   : $SERVER_URL/manager"
 echo " Health Check : $SERVER_URL/health"
 echo "=========================================================="
 
-# 6. Start Node.js Reverse Proxy Gateway on external port
+# 8. Start Node.js Reverse Proxy Gateway on external port
 GATEWAY_SCRIPT="/evolution/gateway.js"
 if [ ! -f "$GATEWAY_SCRIPT" ]; then
   GATEWAY_SCRIPT="./gateway.js"
@@ -75,7 +111,7 @@ echo "[-] Launching Node Gateway reverse proxy on port $EXTERNAL_PORT..."
 PORT="$EXTERNAL_PORT" SERVER_PORT="$EXTERNAL_PORT" EVOLUTION_INTERNAL_PORT="$EVOLUTION_INTERNAL_PORT" node "$GATEWAY_SCRIPT" &
 GATEWAY_PID=$!
 
-# 7. Configure internal port for Evolution API and start
+# 9. Configure internal port for Evolution API and start
 export SERVER_PORT="$EVOLUTION_INTERNAL_PORT"
 export PORT="$EVOLUTION_INTERNAL_PORT"
 

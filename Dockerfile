@@ -1,16 +1,25 @@
 # ==============================================================================
 # Evolution API v2 - Free WhatsApp Service Dockerfile
 # Optimized for Render Cloud Deployment & Local Docker
-# Includes Zero-Dependency Node.js Reverse Proxy Gateway & Static Dashboard
+# Includes:
+#   1. Embedded PostgreSQL server (zero-setup database out of the box)
+#   2. Zero-dependency Node.js Reverse Proxy Gateway (serves Test UI on /)
+#   3. Full Evolution WhatsApp API v2 engine
 # ==============================================================================
 FROM evoapicloud/evolution-api:v2.2.3
 
-# Switch to root to configure permissions and entrypoint
+# Switch to root to configure permissions, packages, and entrypoint
 USER root
 WORKDIR /evolution
 
-# Create directories for persistent WhatsApp session data and media
-RUN mkdir -p /evolution/instances /evolution/public
+# Install embedded PostgreSQL and su-exec on Alpine for zero-config database support
+RUN apk update && \
+    apk add --no-cache postgresql postgresql-contrib su-exec
+
+# Create directories for persistent WhatsApp session data and embedded PostgreSQL
+RUN mkdir -p /evolution/instances /evolution/public /var/lib/postgresql/data /run/postgresql && \
+    chown -R postgres:postgres /var/lib/postgresql /run/postgresql && \
+    chmod 775 /run/postgresql
 
 # Copy custom entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/custom-entrypoint.sh
@@ -33,6 +42,8 @@ ENV NODE_ENV=production \
     AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=true \
     SERVER_DISABLE_DOCS=false \
     SERVER_DISABLE_MANAGER=false \
+    CACHE_REDIS_ENABLED=false \
+    CACHE_LOCAL_ENABLED=true \
     CORS_ORIGIN=* \
     CORS_METHODS=GET,POST,PUT,DELETE \
     CORS_CREDENTIALS=true \
