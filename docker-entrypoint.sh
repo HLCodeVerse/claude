@@ -66,6 +66,9 @@ export DATABASE_SAVE_DATA_HISTORIC=true
 export DATABASE_SAVE_DATA_LABELS=true
 export SYNC_FULL_HISTORY=true
 export CONFIG_SESSION_PHONE_SYNC_FULL_HISTORY=true
+export GROUPS_IGNORE=false
+export CONFIG_SESSION_PHONE_CLIENT="BJCC Portal"
+export CONFIG_SESSION_PHONE_NAME="Chrome"
 
 # Ensure 'evolution' schema exists in PostgreSQL before running Prisma migrations
 echo "[-] Ensuring 'evolution' database schema exists..."
