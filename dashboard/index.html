@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WhatsApp Service Manager | Evolution API</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            whatsapp: {
+              light: '#25D366',
+              DEFAULT: '#128C7E',
+              dark: '#075E54',
+              teal: '#128C7E',
+              blue: '#34B7F1'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @keyframes pulse-slow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(1.02); }
+    }
+    .animate-pulse-slow {
+      animation: pulse-slow 3s infinite;
+    }
+    .glass {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+    }
+    .dark .glass {
+      background: rgba(17, 24, 39, 0.85);
+      backdrop-filter: blur(12px);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen font-sans antialiased transition-colors">
+
+  <!-- Navigation Bar -->
+  <header class="glass sticky top-0 z-40 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#128C7E] to-[#25D366] flex items-center justify-center text-white text-xl shadow-md">
+          <i class="fa-brands fa-whatsapp"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold leading-tight flex items-center gap-2">
+            WhatsApp API Hub
+            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
+              Evolution v2
+            </span>
+          </h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Free, Self-Hosted WhatsApp Cloud Service</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <!-- Status indicator -->
+        <div id="serverStatusBadge" class="flex items-center space-x-2 text-xs font-medium px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-700">
+          <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+          <span>Checking API...</span>
+        </div>
+
+        <!-- Documentation & Manager links -->
+        <a id="btnDocsLink" href="#" target="_blank" class="hidden sm:flex items-center space-x-1 text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition">
+          <i class="fa-solid fa-book-open"></i>
+          <span>Swagger Docs</span>
+        </a>
+        <a id="btnManagerLink" href="#" target="_blank" class="hidden sm:flex items-center space-x-1 text-xs font-medium px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition">
+          <i class="fa-solid fa-sliders"></i>
+          <span>Official Manager</span>
+        </a>
+
+        <!-- Config button -->
+        <button onclick="openConfigModal()" class="flex items-center space-x-1 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition">
+          <i class="fa-solid fa-gear"></i>
+          <span>API Settings</span>
+        </button>
+
+        <!-- Dark mode toggle -->
+        <button onclick="toggleDarkMode()" class="p-2 rounded-lg text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+          <i id="themeIcon" class="fa-solid fa-moon"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+    <!-- Active Connection Banner -->
+    <div class="p-4 rounded-2xl bg-gradient-to-r from-emerald-900/90 to-teal-900/90 text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-lg border border-emerald-700/50">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs uppercase tracking-wider font-semibold text-emerald-300">Target Endpoint</span>
+          <span id="activeUrlText" class="font-mono text-sm font-bold bg-black/30 px-2.5 py-0.5 rounded-md text-emerald-200">
+            http://localhost:8080
+          </span>
+        </div>
+        <p class="text-xs text-emerald-100/80 mt-1">
+          Connected via Global API Key (<span id="maskedKeyText" class="font-mono">••••••••</span>). All requests execute directly against this instance.
+        </p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="testConnection()" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 transition flex items-center gap-1.5">
+          <i class="fa-solid fa-rotate"></i>
+          <span>Ping Service</span>
+        </button>
+        <button onclick="openConfigModal()" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition flex items-center gap-1.5">
+          <i class="fa-solid fa-pen-to-square"></i>
+          <span>Change Server / Key</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="flex border-b border-slate-200 dark:border-slate-800 space-x-2 sm:space-x-4">
+      <button onclick="switchTab('instances')" id="tab-instances" class="tab-btn px-4 py-2.5 font-semibold text-sm border-b-2 border-emerald-600 text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+        <i class="fa-solid fa-mobile-screen-button"></i>
+        <span>WhatsApp Instances</span>
+      </button>
+      <button onclick="switchTab('send')" id="tab-send" class="tab-btn px-4 py-2.5 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-2">
+        <i class="fa-solid fa-paper-plane"></i>
+        <span>Send Messages</span>
+      </button>
+      <button onclick="switchTab('webhooks')" id="tab-webhooks" class="tab-btn px-4 py-2.5 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-2">
+        <i class="fa-solid fa-network-wired"></i>
+        <span>Webhooks & Auto-reply</span>
+      </button>
+      <button onclick="switchTab('playground')" id="tab-playground" class="tab-btn px-4 py-2.5 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-2">
+        <i class="fa-solid fa-code"></i>
+        <span>Code Generator (cURL, Python, Node)</span>
+      </button>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- TAB 1: INSTANCES -->
+    <!-- ======================================================================= -->
+    <div id="content-instances" class="space-y-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-bold">Managed WhatsApp Instances</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Each instance represents one connected WhatsApp phone number (Baileys Multi-Device).</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="fetchInstances()" class="text-xs font-medium px-3 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-arrows-rotate"></i>
+            <span>Refresh</span>
+          </button>
+          <button onclick="openCreateInstanceModal()" class="text-xs font-semibold px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow transition flex items-center gap-1.5">
+            <i class="fa-solid fa-plus"></i>
+            <span>Create New Instance</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Instance Grid -->
+      <div id="instanceGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Rendered dynamically -->
+        <div class="col-span-full py-16 text-center text-slate-400">
+          <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-3 text-emerald-500"></i>
+          <p class="text-sm font-medium">Fetching instances from Evolution API...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- TAB 2: SEND MESSAGES -->
+    <!-- ======================================================================= -->
+    <div id="content-send" class="hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Form Side -->
+        <div class="lg:col-span-2 bg-white dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-6">
+          <div>
+            <h2 class="text-lg font-bold">Compose WhatsApp Message</h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Send free WhatsApp messages via your connected Evolution API instance.</p>
+          </div>
+
+          <!-- Instance & Number -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Select Sender Instance *</label>
+              <select id="sendInstanceSelect" class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 outline-none">
+                <option value="">-- Choose an Instance --</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Recipient Phone Number *</label>
+              <div class="relative">
+                <input id="sendRecipientNumber" type="text" placeholder="e.g. 15551234567 or 919876543210" class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 pl-8 pr-3 py-2 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 outline-none font-mono">
+                <span class="absolute left-3 top-2.5 text-xs text-slate-400 font-bold">+</span>
+              </div>
+              <p class="text-[11px] text-slate-400 mt-1">Country code + number (no spaces, dashes, or leading zeros).</p>
+            </div>
+          </div>
+
+          <!-- Message Type Tabs -->
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Message Payload Type</label>
+            <div class="flex flex-wrap gap-2">
+              <button onclick="setMessageType('text')" id="mtype-text" class="msg-type-btn text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-600 text-white">Text</button>
+              <button onclick="setMessageType('media')" id="mtype-media" class="msg-type-btn text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">Media (Image/Video)</button>
+              <button onclick="setMessageType('audio')" id="mtype-audio" class="msg-type-btn text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">Audio / Voice Note</button>
+              <button onclick="setMessageType('document')" id="mtype-document" class="msg-type-btn text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">Document (PDF/Zip)</button>
+              <button onclick="setMessageType('location')" id="mtype-location" class="msg-type-btn text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">Location</button>
+            </div>
+          </div>
+
+          <!-- Form Fields Container -->
+          <div id="msgFieldsContainer" class="space-y-4">
+            <!-- Text payload (Default) -->
+            <div id="fieldGroup-text">
+              <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Message Text *</label>
+              <textarea id="sendTextMessage" rows="5" placeholder="Type your WhatsApp message here... You can use *bold*, _italics_, ~strike~, and emojis! 🚀" class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 p-3 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500 outline-none"></textarea>
+            </div>
+
+            <!-- Media payload -->
+            <div id="fieldGroup-media" class="hidden space-y-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Media URL *</label>
+                <input id="sendMediaUrl" type="url" placeholder="https://example.com/image.png or .mp4" class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-slate-100 outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Media Caption (Optional)</label>
+                <input id="sendMediaCaption" type="text" placeholder="Check this image out!" class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-slate-100 outline-none">
+              </div>
+            </div>
+
+            <!-- Audio payload -->
+            <div id="fieldGroup-audio" class="hidden space-y-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Audio URL (.mp3, .ogg, .wav) *</label>
+                <input id="sendAudioUrl" type="url" placeholder="https://example.com/audio.mp3" class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-slate-100 outline-none">
+              </div>
+              <div class="flex items-center gap-2">
+                <input id="sendAudioPtt" type="checkbox" checked class="rounded text-emerald-600 focus:ring-emerald-500">
+                <label for="sendAudioPtt" class="text-xs text-slate-600 dark:text-slate-300">Send as Voice Note (PTT / green microphone waveform)</label>
+              </div>
+            </div>
+
+            <!-- Document payload -->
+            <div id="fieldGroup-document" class="hidden space-y-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Document URL *</label>
+                <input id="sendDocUrl" type="url" placeholder="https://example.com/invoice.pdf" class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-slate-100 outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">File Name</label>
+                <input id="sendDocFileName" type="text" placeholder="invoice-1001.pdf" class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-slate-100 outline-none">
+              </div>
+            </div>
+
+            <!-- Location payload -->
+            <div id="fieldGroup-location" class="hidden space-y-3">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Latitude *</label>
+                  <input id="sendLocLat" type="number" step="any" placeholder="37.7749" class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 outline-none">
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Longitude *</label>
+                  <input id="sendLocLng" type="number" step="any" placeholder="-122.4194" class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 outline-none">
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Location Title / Address</label>
+                <input id="sendLocTitle" type="text" placeholder="San Francisco Headquarters" class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 outline-none">
+              </div>
+            </div>
+          </div>
+
+          <button onclick="executeSendMessage()" id="btnSubmitSend" class="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-md transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-paper-plane"></i>
+            <span>Send WhatsApp Message</span>
+          </button>
+        </div>
+
+        <!-- Live Response Output -->
+        <div class="bg-white dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-bold flex items-center gap-2">
+              <i class="fa-solid fa-terminal text-emerald-500"></i>
+              API Response Output
+            </h3>
+            <span id="responseStatusBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-400">
+              idle
+            </span>
+          </div>
+          <pre id="sendOutputPre" class="flex-1 w-full text-xs font-mono bg-slate-950 text-emerald-400 p-4 rounded-xl overflow-x-auto whitespace-pre-wrap select-all">// Responses will appear here after sending...</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- TAB 3: WEBHOOKS & AUTO-REPLY -->
+    <!-- ======================================================================= -->
+    <div id="content-webhooks" class="hidden space-y-6">
+      <div class="bg-white dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-6 max-w-3xl">
+        <div>
+          <h2 class="text-lg font-bold">Webhook Configuration</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Connect your WhatsApp instance to n8n, Make, Zapier, Flowise, or a custom webhook listener for incoming messages.</p>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Target Instance *</label>
+            <select id="webhookInstanceSelect" class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-slate-100 outline-none">
+              <option value="">-- Choose an Instance --</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Webhook Endpoint URL *</label>
+            <input id="webhookEndpointUrl" type="url" placeholder="https://webhook.site/xxx or https://your-server.com/api/webhook" class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 text-slate-900 dark:text-slate-100 outline-none font-mono">
+            <p class="text-[11px] text-slate-400 mt-1">Evolution API will send POST requests with JSON payload to this URL when events occur.</p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Subscribe to Events</label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <label class="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700">
+                <input type="checkbox" id="ev-msg-upsert" checked class="rounded text-emerald-600">
+                <span><strong>MESSAGES_UPSERT</strong> (New incoming messages)</span>
+              </label>
+              <label class="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700">
+                <input type="checkbox" id="ev-conn-update" checked class="rounded text-emerald-600">
+                <span><strong>CONNECTION_UPDATE</strong> (Connection state changes)</span>
+              </label>
+              <label class="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700">
+                <input type="checkbox" id="ev-send-msg" checked class="rounded text-emerald-600">
+                <span><strong>SEND_MESSAGE</strong> (Outgoing sent events)</span>
+              </label>
+              <label class="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700">
+                <input type="checkbox" id="ev-qr-update" checked class="rounded text-emerald-600">
+                <span><strong>QRCODE_UPDATED</strong> (New QR code generated)</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-2">
+            <button onclick="fetchCurrentWebhook()" class="text-xs font-semibold px-4 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 transition">
+              Inspect Current Webhook
+            </button>
+            <button onclick="saveWebhookSettings()" class="text-xs font-semibold px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow transition flex items-center gap-2">
+              <i class="fa-solid fa-floppy-disk"></i>
+              <span>Save Webhook</span>
+            </button>
+          </div>
+        </div>
+
+        <pre id="webhookOutputPre" class="w-full text-xs font-mono bg-slate-950 text-emerald-400 p-4 rounded-xl overflow-x-auto whitespace-pre-wrap select-all">// Webhook inspection details will appear here...</pre>
+      </div>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- TAB 4: CODE GENERATOR -->
+    <!-- ======================================================================= -->
+    <div id="content-playground" class="hidden space-y-6">
+      <div class="bg-white dark:bg-slate-800/80 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-6">
+        <div>
+          <h2 class="text-lg font-bold">API Code Snippet Generator</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Copy-paste ready snippets in cURL, Python, and Node.js automatically populated with your server URL, instance, and API key.</p>
+        </div>
+
+        <div class="flex flex-wrap gap-2 border-b border-slate-200 dark:border-slate-700 pb-3">
+          <button onclick="setSnippetLang('curl')" id="btnLang-curl" class="snippet-lang-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white">cURL</button>
+          <button onclick="setSnippetLang('python')" id="btnLang-python" class="snippet-lang-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">Python (requests)</button>
+          <button onclick="setSnippetLang('node')" id="btnLang-node" class="snippet-lang-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">JavaScript / Node.js</button>
+        </div>
+
+        <div class="relative">
+          <button onclick="copySnippet()" class="absolute right-3 top-3 text-xs font-semibold px-2.5 py-1 rounded bg-white/10 hover:bg-white/20 text-white border border-white/20 transition flex items-center gap-1">
+            <i class="fa-regular fa-copy"></i>
+            <span id="copySnippetBtnText">Copy</span>
+          </button>
+          <pre id="snippetCodePre" class="w-full text-xs font-mono bg-slate-950 text-emerald-300 p-5 rounded-xl overflow-x-auto whitespace-pre select-all leading-relaxed"></pre>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ======================================================================= -->
+  <!-- MODAL: QR CODE & CONNECTION PAIRING -->
+  <!-- ======================================================================= -->
+  <div id="qrModal" class="fixed inset-0 z-50 hidden bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-2xl space-y-6 text-center">
+      <div>
+        <div class="w-12 h-12 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-2xl mb-2">
+          <i class="fa-solid fa-qrcode"></i>
+        </div>
+        <h3 class="text-lg font-bold">Scan WhatsApp QR Code</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          Open WhatsApp on your phone &rarr; <strong>Settings / Linked Devices</strong> &rarr; <strong>Link a Device</strong> and point your camera here.
+        </p>
+      </div>
+
+      <!-- QR Container -->
+      <div class="relative mx-auto w-64 h-64 bg-slate-100 dark:bg-slate-900 rounded-2xl flex items-center justify-center border-2 border-dashed border-slate-300 dark:border-slate-700 overflow-hidden p-2">
+        <div id="qrLoadingSpinner" class="flex flex-col items-center justify-center space-y-2 text-slate-400">
+          <i class="fa-solid fa-circle-notch fa-spin text-3xl text-emerald-500"></i>
+          <span class="text-xs">Generating Pairing QR...</span>
+        </div>
+        <img id="qrImageTag" class="hidden w-full h-full object-contain rounded-xl" alt="WhatsApp QR Code">
+      </div>
+
+      <!-- Live status / Pairing Code -->
+      <div class="space-y-2">
+        <div id="qrStatusPill" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800">
+          <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+          <span id="qrStatusText">Waiting for scan... (Auto-checking)</span>
+        </div>
+        <p id="qrPairingCodeText" class="text-xs font-mono text-slate-400"></p>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="refreshQrCode()" class="flex-1 py-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-xs font-semibold transition">
+          <i class="fa-solid fa-rotate mr-1"></i> Refresh QR
+        </button>
+        <button onclick="closeQrModal()" class="flex-1 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition">
+          Done / Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================= -->
+  <!-- MODAL: CREATE INSTANCE -->
+  <!-- ======================================================================= -->
+  <div id="createInstanceModal" class="fixed inset-0 z-50 hidden bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-2xl space-y-5 text-left">
+      <div>
+        <h3 class="text-lg font-bold">Create WhatsApp Instance</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">A new Baileys instance will be initialized in Evolution API.</p>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Instance Name *</label>
+          <input id="inputNewInstanceName" type="text" placeholder="e.g. support-phone or sales-bot" class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 outline-none font-mono">
+          <p class="text-[11px] text-slate-400 mt-1">Use lowercase letters, numbers, and dashes.</p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Integration Engine</label>
+          <input type="text" disabled value="WHATSAPP-BAILEYS (Free Multi-Device)" class="w-full text-xs font-mono rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-950/50 px-3 py-2 text-slate-500">
+        </div>
+
+        <div class="flex items-center gap-2">
+          <input type="checkbox" id="inputAutoQr" checked class="rounded text-emerald-600">
+          <label for="inputAutoQr" class="text-xs text-slate-600 dark:text-slate-300">Open QR code immediately after creation</label>
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button onclick="closeCreateInstanceModal()" class="flex-1 py-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-xs font-semibold transition">
+          Cancel
+        </button>
+        <button onclick="executeCreateInstance()" id="btnSubmitCreateInstance" class="flex-1 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-plus"></i>
+          <span>Create Instance</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================= -->
+  <!-- MODAL: CONFIGURATION / SETTINGS -->
+  <!-- ======================================================================= -->
+  <div id="configModal" class="fixed inset-0 z-50 hidden bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-lg rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-2xl space-y-5 text-left">
+      <div>
+        <h3 class="text-lg font-bold flex items-center gap-2">
+          <i class="fa-solid fa-sliders text-emerald-500"></i>
+          Evolution API Connection Settings
+        </h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Configure your target Evolution API service URL and security API key.</p>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Server URL *</label>
+          <input id="cfgServerUrl" type="url" placeholder="https://<your-service>.onrender.com or http://localhost:8080" class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 px-3 py-2 outline-none font-mono">
+          <div class="flex items-center gap-2 mt-1.5">
+            <span class="text-[11px] text-slate-400">Presets:</span>
+            <button onclick="document.getElementById('cfgServerUrl').value = 'http://localhost:8080'" class="text-[11px] px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200">Localhost (8080)</button>
+            <button onclick="autoFillRenderUrl()" class="text-[11px] px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200">Current Origin</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-500 mb-1">Global Authentication API Key *</label>
+          <div class="relative">
+            <input id="cfgApiKey" type="password" placeholder="evol_whatsapp_api_secret_key_2026" class="w-full text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 pl-3 pr-10 py-2 outline-none font-mono">
+            <button onclick="toggleKeyVisibility()" class="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-200">
+              <i id="cfgKeyEyeIcon" class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">Must match <code>AUTHENTICATION_API_KEY</code> defined in your environment / Render dashboard.</p>
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2">
+        <button onclick="closeConfigModal()" class="flex-1 py-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-xs font-semibold transition">
+          Cancel
+        </button>
+        <button onclick="saveConfigSettings()" class="flex-1 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-check"></i>
+          <span>Save & Connect</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Logic -->
+  <script>
+    // State
+    let config = {
+      serverUrl: localStorage.getItem('evo_server_url') || 'http://localhost:8080',
+      apiKey: localStorage.getItem('evo_api_key') || 'evol_whatsapp_api_secret_key_2026'
+    };
+
+    let activeInstances = [];
+    let currentPollingInstance = null;
+    let pollInterval = null;
+    let activeMsgType = 'text';
+    let activeSnippetLang = 'curl';
+
+    // Initialization
+    window.addEventListener('DOMContentLoaded', () => {
+      // If served directly from a server, auto-detect host
+      if (window.location.protocol.startsWith('http') && !localStorage.getItem('evo_server_url')) {
+        config.serverUrl = window.location.origin;
+      }
+      updateUIHeader();
+      testConnection();
+      fetchInstances();
+      updateCodeSnippet();
+    });
+
+    function updateUIHeader() {
+      // Clean trailing slashes
+      config.serverUrl = config.serverUrl.replace(/\/+$/, '');
+      document.getElementById('activeUrlText').textContent = config.serverUrl;
+      document.getElementById('maskedKeyText').textContent = config.apiKey ? config.apiKey.substring(0, 4) + '••••' : 'none';
+      document.getElementById('btnDocsLink').href = `${config.serverUrl}/docs`;
+      document.getElementById('btnManagerLink').href = `${config.serverUrl}/manager`;
+    }
+
+    // Ping / Test API Connection
+    async function testConnection() {
+      const badge = document.getElementById('serverStatusBadge');
+      badge.className = 'flex items-center space-x-2 text-xs font-medium px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800';
+      badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span><span>Connecting...</span>`;
+
+      try {
+        const res = await fetch(`${config.serverUrl}/`, {
+          method: 'GET',
+          headers: { 'apikey': config.apiKey }
+        });
+        const data = await res.json();
+
+        if (res.ok && (data.status === 200 || data.message)) {
+          badge.className = 'flex items-center space-x-2 text-xs font-medium px-3 py-1.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800';
+          badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>Online (v${data.version || '2.x'})</span>`;
+        } else {
+          throw new Error(data.message || 'Unknown response');
+        }
+      } catch (err) {
+        badge.className = 'flex items-center space-x-2 text-xs font-medium px-3 py-1.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-400 border border-rose-300 dark:border-rose-800';
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-rose-500"></span><span>Offline / CORS Error</span>`;
+      }
+    }
+
+    // Fetch Instances
+    async function fetchInstances() {
+      const grid = document.getElementById('instanceGrid');
+      grid.innerHTML = `
+        <div class="col-span-full py-16 text-center text-slate-400">
+          <i class="fa-solid fa-circle-notch fa-spin text-3xl mb-3 text-emerald-500"></i>
+          <p class="text-sm font-medium">Fetching instances...</p>
+        </div>`;
+
+      try {
+        const res = await fetch(`${config.serverUrl}/instance/fetchInstances`, {
+          headers: { 'apikey': config.apiKey }
+        });
+        const data = await res.json();
+        activeInstances = Array.isArray(data) ? data : (data.instances || []);
+
+        populateInstanceDropdowns();
+        renderInstanceCards();
+      } catch (err) {
+        grid.innerHTML = `
+          <div class="col-span-full py-12 text-center p-6 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400">
+            <i class="fa-solid fa-triangle-exclamation text-3xl mb-2"></i>
+            <h4 class="font-bold">Failed to load instances</h4>
+            <p class="text-xs mt-1">Verify that your Server URL and API Key are valid. Error: ${err.message}</p>
+          </div>`;
+      }
+    }
+
+    function populateInstanceDropdowns() {
+      const sendSelect = document.getElementById('sendInstanceSelect');
+      const webhookSelect = document.getElementById('webhookInstanceSelect');
+
+      const options = activeInstances.map(inst => {
+        const name = inst.name || inst.instanceName || inst.instance?.instanceName;
+        return `<option value="${name}">${name} (${inst.connectionStatus || inst.instance?.status || 'active'})</option>`;
+      }).join('');
+
+      sendSelect.innerHTML = `<option value="">-- Choose an Instance --</option>` + options;
+      webhookSelect.innerHTML = `<option value="">-- Choose an Instance --</option>` + options;
+    }
+
+    function renderInstanceCards() {
+      const grid = document.getElementById('instanceGrid');
+      if (activeInstances.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full py-16 text-center border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-8 space-y-3">
+            <div class="w-16 h-16 mx-auto rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 text-2xl">
+              <i class="fa-solid fa-mobile-screen"></i>
+            </div>
+            <h3 class="font-bold text-base">No WhatsApp instances found</h3>
+            <p class="text-xs text-slate-500 max-w-sm mx-auto">Create your first instance to generate a QR code and connect your WhatsApp account.</p>
+            <button onclick="openCreateInstanceModal()" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition">
+              Create New Instance Now
+            </button>
+          </div>`;
+        return;
+      }
+
+      grid.innerHTML = activeInstances.map(item => {
+        const name = item.name || item.instanceName || item.instance?.instanceName;
+        const status = (item.connectionStatus || item.instance?.status || 'close').toLowerCase();
+        const phone = item.ownerJid || item.number || 'Not paired yet';
+        const isConnected = status === 'open';
+
+        return `
+          <div class="bg-white dark:bg-slate-800/90 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition space-y-4 flex flex-col justify-between">
+            <div class="space-y-3">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl ${isConnected ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'} flex items-center justify-center text-lg">
+                    <i class="fa-brands fa-whatsapp"></i>
+                  </div>
+                  <div>
+                    <h3 class="font-bold text-sm leading-tight">${name}</h3>
+                    <p class="text-[11px] font-mono text-slate-400">${phone.replace('@s.whatsapp.net', '')}</p>
+                  </div>
+                </div>
+                <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full ${isConnected ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800' : 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-400 border border-rose-300 dark:border-rose-800'}">
+                  ${isConnected ? '● Connected' : '○ Disconnected'}
+                </span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-700/60">
+              ${!isConnected ? `
+                <button onclick="connectAndShowQR('${name}')" class="flex-1 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm">
+                  <i class="fa-solid fa-qrcode"></i>
+                  <span>Scan QR</span>
+                </button>
+              ` : `
+                <button onclick="logoutInstance('${name}')" class="flex-1 py-2 rounded-lg bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 text-xs font-semibold transition">
+                  <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> Disconnect
+                </button>
+              `}
+              <button onclick="deleteInstance('${name}')" title="Delete Instance" class="p-2 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition">
+                <i class="fa-solid fa-trash-can"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Connect & Show QR Code
+    async function connectAndShowQR(instanceName) {
+      currentPollingInstance = instanceName;
+      document.getElementById('qrModal').classList.remove('hidden');
+      document.getElementById('qrLoadingSpinner').classList.remove('hidden');
+      document.getElementById('qrImageTag').classList.add('hidden');
+      document.getElementById('qrStatusText').textContent = 'Generating QR code...';
+      document.getElementById('qrPairingCodeText').textContent = '';
+
+      await refreshQrCode();
+
+      // Start auto polling connection status every 3.5 seconds
+      if (pollInterval) clearInterval(pollInterval);
+      pollInterval = setInterval(async () => {
+        if (!currentPollingInstance) return;
+        try {
+          const res = await fetch(`${config.serverUrl}/instance/connectionState/${currentPollingInstance}`, {
+            headers: { 'apikey': config.apiKey }
+          });
+          const data = await res.json();
+          const state = data.instance?.state || data.state;
+
+          if (state === 'open') {
+            document.getElementById('qrStatusText').textContent = 'WhatsApp Connected Successfully! 🎉';
+            document.getElementById('qrStatusPill').className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800';
+            clearInterval(pollInterval);
+            setTimeout(() => {
+              closeQrModal();
+              fetchInstances();
+            }, 1500);
+          }
+        } catch (e) {}
+      }, 3500);
+    }
+
+    async function refreshQrCode() {
+      if (!currentPollingInstance) return;
+      try {
+        const res = await fetch(`${config.serverUrl}/instance/connect/${currentPollingInstance}`, {
+          headers: { 'apikey': config.apiKey }
+        });
+        const data = await res.json();
+
+        const base64 = data.base64 || data.qrcode?.base64 || data.code;
+        const pairingCode = data.pairingCode || data.pairing_code;
+
+        if (base64) {
+          const img = document.getElementById('qrImageTag');
+          img.src = base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`;
+          img.classList.remove('hidden');
+          document.getElementById('qrLoadingSpinner').classList.add('hidden');
+          document.getElementById('qrStatusText').textContent = 'Point WhatsApp camera to scan...';
+        }
+
+        if (pairingCode) {
+          document.getElementById('qrPairingCodeText').textContent = `Pairing Code: ${pairingCode}`;
+        }
+      } catch (err) {
+        document.getElementById('qrStatusText').textContent = 'Failed to generate QR code: ' + err.message;
+      }
+    }
+
+    function closeQrModal() {
+      if (pollInterval) clearInterval(pollInterval);
+      currentPollingInstance = null;
+      document.getElementById('qrModal').classList.add('hidden');
+    }
+
+    // Create Instance
+    function openCreateInstanceModal() {
+      document.getElementById('inputNewInstanceName').value = '';
+      document.getElementById('createInstanceModal').classList.remove('hidden');
+    }
+
+    function closeCreateInstanceModal() {
+      document.getElementById('createInstanceModal').classList.add('hidden');
+    }
+
+    async function executeCreateInstance() {
+      const name = document.getElementById('inputNewInstanceName').value.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '');
+      const autoQr = document.getElementById('inputAutoQr').checked;
+
+      if (!name) {
+        alert('Please provide a valid instance name.');
+        return;
+      }
+
+      const btn = document.getElementById('btnSubmitCreateInstance');
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Creating...`;
+
+      try {
+        const res = await fetch(`${config.serverUrl}/instance/create`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': config.apiKey
+          },
+          body: JSON.stringify({
+            instanceName: name,
+            qrcode: true,
+            integration: 'WHATSAPP-BAILEYS'
+          })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          closeCreateInstanceModal();
+          await fetchInstances();
+          if (autoQr) {
+            connectAndShowQR(name);
+          }
+        } else {
+          alert(`Error: ${data.response?.message || data.message || 'Failed to create instance'}`);
+        }
+      } catch (err) {
+        alert('Request failed: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-plus"></i> Create Instance`;
+      }
+    }
+
+    // Delete / Logout Instance
+    async function logoutInstance(name) {
+      if (!confirm(`Disconnect instance "${name}"? You will need to scan QR code again.`)) return;
+      try {
+        await fetch(`${config.serverUrl}/instance/logout/${name}`, {
+          method: 'DELETE',
+          headers: { 'apikey': config.apiKey }
+        });
+        fetchInstances();
+      } catch (e) {
+        alert('Failed to logout: ' + e.message);
+      }
+    }
+
+    async function deleteInstance(name) {
+      if (!confirm(`Permanently delete instance "${name}" and clear all its local session files?`)) return;
+      try {
+        await fetch(`${config.serverUrl}/instance/delete/${name}`, {
+          method: 'DELETE',
+          headers: { 'apikey': config.apiKey }
+        });
+        fetchInstances();
+      } catch (e) {
+        alert('Failed to delete: ' + e.message);
+      }
+    }
+
+    // Message Sending Logic
+    function setMessageType(type) {
+      activeMsgType = type;
+      document.querySelectorAll('.msg-type-btn').forEach(b => {
+        b.className = 'msg-type-btn text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300';
+      });
+      document.getElementById(`mtype-${type}`).className = 'msg-type-btn text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-600 text-white';
+
+      ['text', 'media', 'audio', 'document', 'location'].forEach(t => {
+        const el = document.getElementById(`fieldGroup-${t}`);
+        if (el) el.classList.toggle('hidden', t !== type);
+      });
+      updateCodeSnippet();
+    }
+
+    async function executeSendMessage() {
+      const instance = document.getElementById('sendInstanceSelect').value;
+      const recipient = document.getElementById('sendRecipientNumber').value.trim().replace(/[^0-9]/g, '');
+      const outputPre = document.getElementById('sendOutputPre');
+      const statusBadge = document.getElementById('responseStatusBadge');
+      const btn = document.getElementById('btnSubmitSend');
+
+      if (!instance) {
+        alert('Please select an active WhatsApp instance.');
+        return;
+      }
+      if (!recipient) {
+        alert('Please enter a recipient phone number with country code.');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Sending message...`;
+      statusBadge.textContent = 'sending...';
+      statusBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-400';
+
+      let endpoint = '';
+      let payload = {};
+
+      if (activeMsgType === 'text') {
+        const text = document.getElementById('sendTextMessage').value.trim();
+        if (!text) { alert('Message text is required'); btn.disabled = false; return; }
+        endpoint = `/message/sendText/${instance}`;
+        payload = { number: recipient, text: text };
+      } else if (activeMsgType === 'media') {
+        const url = document.getElementById('sendMediaUrl').value.trim();
+        const caption = document.getElementById('sendMediaCaption').value.trim();
+        if (!url) { alert('Media URL is required'); btn.disabled = false; return; }
+        endpoint = `/message/sendMedia/${instance}`;
+        payload = { number: recipient, mediatype: 'image', media: url, caption: caption };
+      } else if (activeMsgType === 'audio') {
+        const url = document.getElementById('sendAudioUrl').value.trim();
+        const ptt = document.getElementById('sendAudioPtt').checked;
+        if (!url) { alert('Audio URL is required'); btn.disabled = false; return; }
+        endpoint = `/message/sendWhatsAppAudio/${instance}`;
+        payload = { number: recipient, audio: url, ptt: ptt };
+      } else if (activeMsgType === 'document') {
+        const url = document.getElementById('sendDocUrl').value.trim();
+        const fileName = document.getElementById('sendDocFileName').value.trim() || 'document.pdf';
+        if (!url) { alert('Document URL is required'); btn.disabled = false; return; }
+        endpoint = `/message/sendMedia/${instance}`;
+        payload = { number: recipient, mediatype: 'document', media: url, fileName: fileName };
+      } else if (activeMsgType === 'location') {
+        const lat = parseFloat(document.getElementById('sendLocLat').value) || 0;
+        const lng = parseFloat(document.getElementById('sendLocLng').value) || 0;
+        const title = document.getElementById('sendLocTitle').value.trim();
+        endpoint = `/message/sendLocation/${instance}`;
+        payload = { number: recipient, latitude: lat, longitude: lng, name: title };
+      }
+
+      try {
+        const res = await fetch(`${config.serverUrl}${endpoint}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': config.apiKey
+          },
+          body: JSON.stringify(payload)
+        });
+        const resData = await res.json();
+
+        outputPre.textContent = JSON.stringify(resData, null, 2);
+        statusBadge.textContent = `${res.status} ${res.statusText || 'OK'}`;
+        statusBadge.className = res.ok
+          ? 'text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400'
+          : 'text-[10px] font-mono px-2 py-0.5 rounded bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-400';
+      } catch (err) {
+        outputPre.textContent = `Request Error: ${err.message}`;
+        statusBadge.textContent = 'error';
+        statusBadge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-400';
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Send WhatsApp Message`;
+      }
+    }
+
+    // Webhooks Logic
+    async function fetchCurrentWebhook() {
+      const instance = document.getElementById('webhookInstanceSelect').value;
+      if (!instance) { alert('Please select an instance.'); return; }
+
+      const pre = document.getElementById('webhookOutputPre');
+      pre.textContent = 'Fetching webhook configuration...';
+
+      try {
+        const res = await fetch(`${config.serverUrl}/webhook/find/${instance}`, {
+          headers: { 'apikey': config.apiKey }
+        });
+        const data = await res.json();
+        pre.textContent = JSON.stringify(data, null, 2);
+        if (data.url) {
+          document.getElementById('webhookEndpointUrl').value = data.url;
+        }
+      } catch (err) {
+        pre.textContent = 'Error: ' + err.message;
+      }
+    }
+
+    async function saveWebhookSettings() {
+      const instance = document.getElementById('webhookInstanceSelect').value;
+      const url = document.getElementById('webhookEndpointUrl').value.trim();
+      const pre = document.getElementById('webhookOutputPre');
+
+      if (!instance) { alert('Please select an instance.'); return; }
+      if (!url) { alert('Please enter a valid webhook destination URL.'); return; }
+
+      const events = [];
+      if (document.getElementById('ev-msg-upsert').checked) events.push('MESSAGES_UPSERT');
+      if (document.getElementById('ev-conn-update').checked) events.push('CONNECTION_UPDATE');
+      if (document.getElementById('ev-send-msg').checked) events.push('SEND_MESSAGE');
+      if (document.getElementById('ev-qr-update').checked) events.push('QRCODE_UPDATED');
+
+      pre.textContent = 'Saving webhook configuration...';
+
+      try {
+        const res = await fetch(`${config.serverUrl}/webhook/set/${instance}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': config.apiKey
+          },
+          body: JSON.stringify({
+            enabled: true,
+            url: url,
+            webhook_by_events: false,
+            events: events
+          })
+        });
+        const data = await res.json();
+        pre.textContent = JSON.stringify(data, null, 2);
+        alert('Webhook saved successfully!');
+      } catch (err) {
+        pre.textContent = 'Error: ' + err.message;
+      }
+    }
+
+    // Code Generator Tab
+    function setSnippetLang(lang) {
+      activeSnippetLang = lang;
+      document.querySelectorAll('.snippet-lang-btn').forEach(b => {
+        b.className = 'snippet-lang-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300';
+      });
+      document.getElementById(`btnLang-${lang}`).className = 'snippet-lang-btn px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white';
+      updateCodeSnippet();
+    }
+
+    function updateCodeSnippet() {
+      const inst = activeInstances[0]?.name || 'my_instance';
+      const pre = document.getElementById('snippetCodePre');
+
+      if (activeSnippetLang === 'curl') {
+        pre.textContent = `# 1. Send WhatsApp Text Message
+curl -X POST "${config.serverUrl}/message/sendText/${inst}" \\
+  -H "Content-Type: application/json" \\
+  -H "apikey: ${config.apiKey}" \\
+  -d '{
+    "number": "15551234567",
+    "text": "Hello from Evolution API!"
+  }'
+
+# 2. Check Connection State
+curl -X GET "${config.serverUrl}/instance/connectionState/${inst}" \\
+  -H "apikey: ${config.apiKey}"`;
+      } else if (activeSnippetLang === 'python') {
+        pre.textContent = `import requests
+
+SERVER_URL = "${config.serverUrl}"
+API_KEY = "${config.apiKey}"
+INSTANCE = "${inst}"
+
+# Send WhatsApp Text Message
+url = f"{SERVER_URL}/message/sendText/{INSTANCE}"
+headers = {
+    "apikey": API_KEY,
+    "Content-Type": "application/json"
+}
+payload = {
+    "number": "15551234567",
+    "text": "Hello from Python and Evolution API! 🐍"
+}
+
+response = requests.post(url, credentials=None, json=payload, headers=headers)
+print("Status:", response.status_code)
+print("Response:", response.json())`;
+      } else if (activeSnippetLang === 'node') {
+        pre.textContent = `// Node.js (v18+ with native fetch)
+const SERVER_URL = "${config.serverUrl}";
+const API_KEY = "${config.apiKey}";
+const INSTANCE = "${inst}";
+
+async function sendWhatsApp() {
+  const response = await fetch(\`\${SERVER_URL}/message/sendText/\${INSTANCE}\`, {
+    method: "POST",
+    headers: {
+      "apikey": API_KEY,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      number: "15551234567",
+      text: "Hello from Node.js and Evolution API! 🚀"
+    })
+  });
+
+  const data = await response.json();
+  console.log("Status:", response.status);
+  console.log("Result:", data);
+}
+
+sendWhatsApp();`;
+      }
+    }
+
+    function copySnippet() {
+      const text = document.getElementById('snippetCodePre').textContent;
+      navigator.clipboard.writeText(text);
+      const btnText = document.getElementById('copySnippetBtnText');
+      btnText.textContent = 'Copied!';
+      setTimeout(() => btnText.textContent = 'Copy', 2000);
+    }
+
+    // Tab Navigation
+    function switchTab(tabId) {
+      ['instances', 'send', 'webhooks', 'playground'].forEach(t => {
+        document.getElementById(`content-${t}`).classList.toggle('hidden', t !== tabId);
+        const btn = document.getElementById(`tab-${t}`);
+        if (t === tabId) {
+          btn.className = 'tab-btn px-4 py-2.5 font-semibold text-sm border-b-2 border-emerald-600 text-emerald-600 dark:text-emerald-400 flex items-center gap-2';
+        } else {
+          btn.className = 'tab-btn px-4 py-2.5 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-2';
+        }
+      });
+      if (tabId === 'playground') updateCodeSnippet();
+    }
+
+    // Config Modal
+    function openConfigModal() {
+      document.getElementById('cfgServerUrl').value = config.serverUrl;
+      document.getElementById('cfgApiKey').value = config.apiKey;
+      document.getElementById('configModal').classList.remove('hidden');
+    }
+
+    function closeConfigModal() {
+      document.getElementById('configModal').classList.add('hidden');
+    }
+
+    function autoFillRenderUrl() {
+      if (window.location.protocol.startsWith('http')) {
+        document.getElementById('cfgServerUrl').value = window.location.origin;
+      }
+    }
+
+    function toggleKeyVisibility() {
+      const input = document.getElementById('cfgApiKey');
+      const icon = document.getElementById('cfgKeyEyeIcon');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fa-solid fa-eye-slash';
+      } else {
+        input.type = 'password';
+        icon.className = 'fa-solid fa-eye';
+      }
+    }
+
+    function saveConfigSettings() {
+      const url = document.getElementById('cfgServerUrl').value.trim().replace(/\/+$/, '');
+      const key = document.getElementById('cfgApiKey').value.trim();
+
+      if (!url) { alert('Server URL cannot be empty.'); return; }
+
+      config.serverUrl = url;
+      config.apiKey = key;
+
+      localStorage.setItem('evo_server_url', url);
+      localStorage.setItem('evo_api_key', key);
+
+      closeConfigModal();
+      updateUIHeader();
+      testConnection();
+      fetchInstances();
+      updateCodeSnippet();
+    }
+
+    // Dark Mode Toggle
+    function toggleDarkMode() {
+      const html = document.documentElement;
+      const icon = document.getElementById('themeIcon');
+      if (html.classList.contains('dark')) {
+        html.classList.remove('dark');
+        icon.className = 'fa-solid fa-moon';
+        localStorage.setItem('evo_theme', 'light');
+      } else {
+        html.classList.add('dark');
+        icon.className = 'fa-solid fa-sun';
+        localStorage.setItem('evo_theme', 'dark');
+      }
+    }
+
+    if (localStorage.getItem('evo_theme') === 'dark' || (!('evo_theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+      const icon = document.getElementById('themeIcon');
+      if (icon) icon.className = 'fa-solid fa-sun';
+    }
+  </script>
+</body>
+</html>

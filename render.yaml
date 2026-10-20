@@ -1,0 +1,61 @@
+# ==============================================================================
+# Render Blueprint Configuration (render.yaml)
+# 1-Click Deployment for Evolution API Free WhatsApp Service on Render
+# ==============================================================================
+services:
+  # Main Evolution WhatsApp API Web Service
+  - type: web
+    name: evolution-whatsapp-api
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    envVars:
+      - key: SERVER_URL
+        fromService:
+          type: web
+          name: evolution-whatsapp-api
+          property: url
+      - key: SERVER_PORT
+        value: 10000
+      - key: PORT
+        value: 10000
+      - key: AUTHENTICATION_TYPE
+        value: apikey
+      - key: AUTHENTICATION_API_KEY
+        generateValue: true
+      - key: AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES
+        value: "true"
+      - key: SERVER_DISABLE_DOCS
+        value: "false"
+      - key: SERVER_DISABLE_MANAGER
+        value: "false"
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: CORS_METHODS
+        value: "GET,POST,PUT,DELETE"
+      - key: CORS_CREDENTIALS
+        value: "true"
+      - key: LOG_LEVEL
+        value: "ERROR,WARN,INFO"
+      - key: DEL_INSTANCE
+        value: "false"
+      - key: DATABASE_ENABLED
+        value: "true"
+      - key: DATABASE_PROVIDER
+        value: postgresql
+      - key: DATABASE_CONNECTION_URI
+        fromDatabase:
+          name: evolution-whatsapp-db
+          property: connectionString
+      - key: CACHE_REDIS_ENABLED
+        value: "false"
+
+# Managed PostgreSQL Database for WhatsApp instance and chat persistence
+databases:
+  - name: evolution-whatsapp-db
+    databaseName: evolution
+    user: evolution_user
+    plan: free
+    region: oregon

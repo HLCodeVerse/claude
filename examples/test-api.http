@@ -1,0 +1,94 @@
+### ==============================================================================
+### Evolution API v2 - REST Client Test Requests
+### Use with the "REST Client" extension in VS Code
+### ==============================================================================
+
+@baseUrl = http://localhost:8080
+@apiKey = evol_whatsapp_api_secret_key_2026
+@instance = my_whatsapp_bot
+@testNumber = 15551234567
+
+### 1. Healthcheck / Server Info
+GET {{baseUrl}}/
+apikey: {{apiKey}}
+
+### 2. Create New WhatsApp Instance
+POST {{baseUrl}}/instance/create
+apikey: {{apiKey}}
+Content-Type: application/json
+
+{
+  "instanceName": "{{instance}}",
+  "qrcode": true,
+  "integration": "WHATSAPP-BAILEYS"
+}
+
+### 3. Connect Instance & Get QR Code (Base64)
+GET {{baseUrl}}/instance/connect/{{instance}}
+apikey: {{apiKey}}
+
+### 4. Check Connection Status (open, close, connecting)
+GET {{baseUrl}}/instance/connectionState/{{instance}}
+apikey: {{apiKey}}
+
+### 5. Fetch All Instances
+GET {{baseUrl}}/instance/fetchInstances
+apikey: {{apiKey}}
+
+### 6. Send WhatsApp Text Message
+POST {{baseUrl}}/message/sendText/{{instance}}
+apikey: {{apiKey}}
+Content-Type: application/json
+
+{
+  "number": "{{testNumber}}",
+  "text": "Hello from Evolution API v2! 🚀"
+}
+
+### 7. Send WhatsApp Image Media
+POST {{baseUrl}}/message/sendMedia/{{instance}}
+apikey: {{apiKey}}
+Content-Type: application/json
+
+{
+  "number": "{{testNumber}}",
+  "mediatype": "image",
+  "mimetype": "image/png",
+  "caption": "Photo sent via Evolution API",
+  "media": "https://picsum.photos/400/300"
+}
+
+### 8. Send WhatsApp Voice Audio Note (PTT)
+POST {{baseUrl}}/message/sendWhatsAppAudio/{{instance}}
+apikey: {{apiKey}}
+Content-Type: application/json
+
+{
+  "number": "{{testNumber}}",
+  "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+}
+
+### 9. Set Webhook Configuration
+POST {{baseUrl}}/webhook/set/{{instance}}
+apikey: {{apiKey}}
+Content-Type: application/json
+
+{
+  "enabled": true,
+  "url": "https://webhook.site/replace-with-your-uuid",
+  "webhook_by_events": false,
+  "events": [
+    "MESSAGES_UPSERT",
+    "CONNECTION_UPDATE",
+    "SEND_MESSAGE",
+    "QRCODE_UPDATED"
+  ]
+}
+
+### 10. Disconnect / Logout WhatsApp Session
+DELETE {{baseUrl}}/instance/logout/{{instance}}
+apikey: {{apiKey}}
+
+### 11. Delete Instance
+DELETE {{baseUrl}}/instance/delete/{{instance}}
+apikey: {{apiKey}}
