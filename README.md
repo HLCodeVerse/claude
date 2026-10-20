@@ -100,10 +100,10 @@ If you want to run the full stack (API + PostgreSQL + Redis) locally on your com
    docker compose logs -f evolution-api
    ```
 4. Access the services:
-   - **Base API:** [http://localhost:8080](http://localhost:8080)
+   - **Custom Dashboard UI:** [http://localhost:8080/dashboard](http://localhost:8080/dashboard) (or `/ui`, `/app`, or visit `/` in any browser)
+   - **Gateway Health Check:** [http://localhost:8080/health](http://localhost:8080/health)
    - **Swagger UI:** [http://localhost:8080/docs](http://localhost:8080/docs)
    - **Evolution Manager:** [http://localhost:8080/manager](http://localhost:8080/manager)
-   - **Custom Dashboard:** Open `dashboard/index.html` in your browser.
 
 ---
 
